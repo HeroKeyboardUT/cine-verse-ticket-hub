@@ -1,0 +1,192 @@
+
+export interface Movie {
+  id: string;
+  title: string;
+  description: string;
+  posterUrl: string;
+  backdropUrl: string;
+  rating: number;
+  duration: string;
+  genre: string[];
+  releaseDate: string;
+  trailerUrl?: string;
+  showtimes: {
+    date: string;
+    times: string[];
+  }[];
+}
+
+export const movies: Movie[] = [
+  {
+    id: "1",
+    title: "Galaxy Warriors",
+    description: "In the far reaches of space, a team of unlikely heroes must unite to save the galaxy from an ancient threat that has reawakened.",
+    posterUrl: "https://images.unsplash.com/photo-1637858868799-7f26a0640eb6?q=80&w=2940&auto=format&fit=crop",
+    backdropUrl: "https://images.unsplash.com/photo-1462759353907-b2ea5ebd72e7?q=80&w=2831&auto=format&fit=crop",
+    rating: 4.5,
+    duration: "2h 15m",
+    genre: ["Sci-Fi", "Adventure", "Action"],
+    releaseDate: "2025-05-15",
+    trailerUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+    showtimes: [
+      {
+        date: "2025-04-10",
+        times: ["10:00 AM", "1:30 PM", "4:45 PM", "8:00 PM", "10:30 PM"]
+      },
+      {
+        date: "2025-04-11",
+        times: ["10:00 AM", "1:30 PM", "4:45 PM", "8:00 PM", "10:30 PM"]
+      }
+    ]
+  },
+  {
+    id: "2",
+    title: "Midnight Shadows",
+    description: "A detective with a troubled past must solve a series of mysterious disappearances in a small town where nothing is as it seems.",
+    posterUrl: "https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=2825&auto=format&fit=crop",
+    backdropUrl: "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?q=80&w=3274&auto=format&fit=crop",
+    rating: 4.2,
+    duration: "1h 58m",
+    genre: ["Thriller", "Mystery", "Drama"],
+    releaseDate: "2025-03-22",
+    showtimes: [
+      {
+        date: "2025-04-10",
+        times: ["11:15 AM", "2:30 PM", "5:45 PM", "9:00 PM"]
+      },
+      {
+        date: "2025-04-11",
+        times: ["11:15 AM", "2:30 PM", "5:45 PM", "9:00 PM"]
+      }
+    ]
+  },
+  {
+    id: "3",
+    title: "Echoes of Time",
+    description: "A time traveler becomes trapped between eras and must find a way back to save both past and future from collapsing.",
+    posterUrl: "https://images.unsplash.com/photo-1518834107812-67b0b7c58434?q=80&w=2835&auto=format&fit=crop",
+    backdropUrl: "https://images.unsplash.com/photo-1501700493788-fa1a4fc9fe62?q=80&w=3269&auto=format&fit=crop",
+    rating: 4.7,
+    duration: "2h 30m",
+    genre: ["Sci-Fi", "Drama", "Adventure"],
+    releaseDate: "2025-02-14",
+    showtimes: [
+      {
+        date: "2025-04-10",
+        times: ["10:30 AM", "2:00 PM", "5:30 PM", "9:15 PM"]
+      },
+      {
+        date: "2025-04-11",
+        times: ["10:30 AM", "2:00 PM", "5:30 PM", "9:15 PM"]
+      }
+    ]
+  },
+  {
+    id: "4",
+    title: "The Last Kingdom",
+    description: "In a world torn by war, a young ruler must navigate political intrigue and ancient prophecies to unite the fractured lands.",
+    posterUrl: "https://images.unsplash.com/photo-1572177191856-3cde618dee1f?q=80&w=2787&auto=format&fit=crop",
+    backdropUrl: "https://images.unsplash.com/photo-1682687982501-1e58ab814714?q=80&w=3270&auto=format&fit=crop",
+    rating: 4.3,
+    duration: "2h 22m",
+    genre: ["Fantasy", "Action", "Drama"],
+    releaseDate: "2025-01-30",
+    showtimes: [
+      {
+        date: "2025-04-10",
+        times: ["11:00 AM", "2:45 PM", "6:15 PM", "9:45 PM"]
+      },
+      {
+        date: "2025-04-11",
+        times: ["11:00 AM", "2:45 PM", "6:15 PM", "9:45 PM"]
+      }
+    ]
+  },
+  {
+    id: "5",
+    title: "Whispers in the Wind",
+    description: "A musician discovers she can communicate with spirits through her music, opening a door to the supernatural world.",
+    posterUrl: "https://images.unsplash.com/photo-1616530940355-351fabd9524b?q=80&w=2785&auto=format&fit=crop",
+    backdropUrl: "https://images.unsplash.com/photo-1477346611705-65d1883cee1e?q=80&w=3270&auto=format&fit=crop",
+    rating: 4.0,
+    duration: "1h 52m",
+    genre: ["Horror", "Supernatural", "Drama"],
+    releaseDate: "2025-04-03",
+    showtimes: [
+      {
+        date: "2025-04-10",
+        times: ["12:00 PM", "3:15 PM", "6:30 PM", "9:30 PM"]
+      },
+      {
+        date: "2025-04-11",
+        times: ["12:00 PM", "3:15 PM", "6:30 PM", "9:30 PM"]
+      }
+    ]
+  },
+  {
+    id: "6",
+    title: "Ocean's Descent",
+    description: "A deep-sea research team discovers an ancient civilization beneath the ocean floor, but awakens something that should have remained buried.",
+    posterUrl: "https://images.unsplash.com/photo-1551076805-e1869033e561?q=80&w=2832&auto=format&fit=crop",
+    backdropUrl: "https://images.unsplash.com/photo-1518623489648-a173ef7824f3?q=80&w=2982&auto=format&fit=crop",
+    rating: 3.9,
+    duration: "2h 10m",
+    genre: ["Adventure", "Horror", "Sci-Fi"],
+    releaseDate: "2025-03-10",
+    showtimes: [
+      {
+        date: "2025-04-10",
+        times: ["11:45 AM", "2:30 PM", "5:15 PM", "8:45 PM"]
+      },
+      {
+        date: "2025-04-11",
+        times: ["11:45 AM", "2:30 PM", "5:15 PM", "8:45 PM"]
+      }
+    ]
+  }
+];
+
+export interface Seat {
+  id: string;
+  row: string;
+  number: number;
+  status: 'available' | 'occupied' | 'selected';
+  type: 'standard' | 'premium' | 'vip';
+}
+
+export const generateSeats = (showtime: string): Seat[] => {
+  const rows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+  const seatsPerRow = 12;
+  const seats: Seat[] = [];
+  
+  rows.forEach(row => {
+    for (let i = 1; i <= seatsPerRow; i++) {
+      // Generate random status for demo purposes
+      const random = Math.random();
+      let status: 'available' | 'occupied' | 'selected' = 'available';
+      
+      if (random < 0.2) {
+        status = 'occupied';
+      }
+      
+      // Determine seat type
+      let type: 'standard' | 'premium' | 'vip' = 'standard';
+      if (row === 'G' || row === 'H') {
+        type = 'premium';
+      }
+      if (row === 'D' || row === 'E') {
+        type = 'vip';
+      }
+      
+      seats.push({
+        id: `${row}${i}`,
+        row,
+        number: i,
+        status,
+        type
+      });
+    }
+  });
+  
+  return seats;
+};
