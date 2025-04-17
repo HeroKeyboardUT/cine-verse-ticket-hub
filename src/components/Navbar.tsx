@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Film, Ticket, Search, Menu, X, Home, Play } from 'lucide-react';
+import { Film, Ticket, Search, Menu, X, Home, Play, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
@@ -33,6 +33,10 @@ const Navbar = () => {
               <Link to="/tickets" className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium flex items-center">
                 <Ticket className="mr-1 h-4 w-4" />
                 Tickets
+              </Link>
+              <Link to="/admin/login" className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium flex items-center">
+                <Settings className="mr-1 h-4 w-4" />
+                Admin
               </Link>
             </div>
           </div>
@@ -89,6 +93,9 @@ const Navbar = () => {
             </Link>
             <Link to="/tickets" className="text-gray-300 hover:bg-gray-700 hover:text-white block px-3 py-2 rounded-md text-base font-medium">
               Tickets
+            </Link>
+            <Link to="/admin/login" className="text-gray-300 hover:bg-gray-700 hover:text-white block px-3 py-2 rounded-md text-base font-medium">
+              Admin
             </Link>
             <div className="pt-4 pb-3 border-t border-gray-700">
               <div className="flex items-center px-3">
