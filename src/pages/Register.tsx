@@ -6,55 +6,90 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
-import { Film } from 'lucide-react';
+import { Film, User, Mail, Lock, Phone, Calendar } from 'lucide-react';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { useForm } from "react-hook-form";
+import { Checkbox } from '@/components/ui/checkbox';
+
+interface RegisterFormValues {
+  fullName: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+  phone: string;
+  birthdate: string;
+  agreeTerms: boolean;
+}
 
 const Register = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [name, setName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const form = useForm<RegisterFormValues>({
+    defaultValues: {
+      fullName: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
+      phone: '',
+      birthdate: '',
+      agreeTerms: false,
+    }
+  });
 
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (password !== confirmPassword) {
+  const handleRegister = async (data: RegisterFormValues) => {
+    if (data.password !== data.confirmPassword) {
       toast({
         variant: "destructive",
-        title: "Passwords do not match",
-        description: "Please make sure your passwords match.",
+        title: "Mật khẩu không khớp",
+        description: "Vui lòng đảm bảo mật khẩu của bạn trùng khớp.",
+      });
+      return;
+    }
+
+    if (!data.agreeTerms) {
+      toast({
+        variant: "destructive",
+        title: "Điều khoản chưa được chấp nhận",
+        description: "Vui lòng đồng ý với điều khoản và điều kiện để tiếp tục.",
       });
       return;
     }
 
     setIsLoading(true);
 
-    // This is a mock registration. In a real app, you would connect to a backend/Supabase
     try {
-      // Simulate an API call
+      // Mô phỏng API call
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Store user in localStorage (for demo purposes only)
-      // In a real app, you'd store authentication tokens instead
+      // Lưu thông tin người dùng vào localStorage (chỉ cho mục đích demo)
       localStorage.setItem('user', JSON.stringify({
         id: `user-${Math.random().toString(36).substr(2, 9)}`,
-        email,
-        name,
-        isAdmin: false
+        fullName: data.fullName,
+        email: data.email,
+        phone: data.phone,
+        birthdate: data.birthdate,
+        isAdmin: false,
+        createdAt: new Date().toISOString()
       }));
 
       toast({
-        title: "Registration successful",
-        description: "Your account has been created successfully.",
+        title: "Đăng ký thành công",
+        description: "Tài khoản của bạn đã được tạo thành công.",
       });
 
       navigate('/');
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Registration failed",
-        description: "There was an error creating your account.",
+        title: "Đăng ký thất bại",
+        description: "Đã xảy ra lỗi khi tạo tài khoản của bạn.",
       });
     } finally {
       setIsLoading(false);
@@ -69,67 +104,202 @@ const Register = () => {
         </div>
         <Card>
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold text-center">Create an account</CardTitle>
+            <CardTitle className="text-2xl font-bold text-center">Tạo tài khoản</CardTitle>
             <CardDescription className="text-center">
-              Enter your information to create an account
+              Nhập thông tin của bạn để tạo tài khoản
             </CardDescription>
           </CardHeader>
-          <form onSubmit={handleRegister}>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
-                <Input 
-                  id="name" 
-                  placeholder="Enter your name" 
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required 
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleRegister)}>
+              <CardContent className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="fullName"
+                  rules={{ required: "Họ và tên là bắt buộc" }}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Họ và tên</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <User className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                          <Input 
+                            placeholder="Nhập họ và tên" 
+                            className="pl-9"
+                            {...field} 
+                          />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input 
-                  id="email" 
-                  type="email" 
-                  placeholder="m@example.com" 
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required 
+                
+                <FormField
+                  control={form.control}
+                  name="email"
+                  rules={{ 
+                    required: "Email là bắt buộc",
+                    pattern: {
+                      value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                      message: "Email không hợp lệ"
+                    }
+                  }}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Mail className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                          <Input 
+                            type="email" 
+                            placeholder="example@email.com" 
+                            className="pl-9"
+                            {...field} 
+                          />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input 
-                  id="password" 
-                  type="password" 
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required 
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="phone"
+                    rules={{ 
+                      required: "Số điện thoại là bắt buộc",
+                      pattern: {
+                        value: /^[0-9+\-\s]+$/,
+                        message: "Số điện thoại không hợp lệ"
+                      }
+                    }}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Số điện thoại</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Phone className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <Input 
+                              placeholder="0123456789" 
+                              className="pl-9"
+                              {...field} 
+                            />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="birthdate"
+                    rules={{ required: "Ngày sinh là bắt buộc" }}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Ngày sinh</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Calendar className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <Input 
+                              type="date" 
+                              className="pl-9"
+                              {...field} 
+                            />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                
+                <FormField
+                  control={form.control}
+                  name="password"
+                  rules={{ 
+                    required: "Mật khẩu là bắt buộc",
+                    minLength: {
+                      value: 8,
+                      message: "Mật khẩu phải có ít nhất 8 ký tự"
+                    }
+                  }}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Mật khẩu</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Lock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                          <Input 
+                            type="password" 
+                            placeholder="••••••••" 
+                            className="pl-9"
+                            {...field} 
+                          />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm Password</Label>
-                <Input 
-                  id="confirmPassword" 
-                  type="password" 
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required 
+                
+                <FormField
+                  control={form.control}
+                  name="confirmPassword"
+                  rules={{ required: "Xác nhận mật khẩu là bắt buộc" }}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Xác nhận mật khẩu</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Lock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                          <Input 
+                            type="password" 
+                            placeholder="••••••••" 
+                            className="pl-9"
+                            {...field} 
+                          />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
-            </CardContent>
-            <CardFooter className="flex flex-col space-y-4">
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Creating account..." : "Create account"}
-              </Button>
-              <div className="text-center text-sm text-muted-foreground">
-                Already have an account?{" "}
-                <Link to="/login" className="text-primary underline underline-offset-4 hover:text-primary-focus">
-                  Sign in
-                </Link>
-              </div>
-            </CardFooter>
-          </form>
+                
+                <FormField
+                  control={form.control}
+                  name="agreeTerms"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 mt-4">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>
+                          Tôi đồng ý với <Link to="/terms" className="text-primary underline">Điều khoản</Link> và <Link to="/privacy" className="text-primary underline">Chính sách bảo mật</Link>
+                        </FormLabel>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
+              <CardFooter className="flex flex-col space-y-4">
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? "Đang tạo tài khoản..." : "Tạo tài khoản"}
+                </Button>
+                <div className="text-center text-sm text-muted-foreground">
+                  Đã có tài khoản?{" "}
+                  <Link to="/login" className="text-primary underline underline-offset-4 hover:text-primary-focus">
+                    Đăng nhập
+                  </Link>
+                </div>
+              </CardFooter>
+            </form>
+          </Form>
         </Card>
       </div>
     </div>

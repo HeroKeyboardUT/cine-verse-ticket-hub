@@ -1,20 +1,13 @@
 
-import React, { useState, useEffect } from 'react';
-import { Ticket, Search, Filter, ArrowUpDown, Eye, AlertCircle, CheckCircle } from 'lucide-react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
+import { Search, Filter } from 'lucide-react';
 
-// Mock tickets data
-const initialTickets = [
-  { id: 'T1001', movieId: '1', movieTitle: 'Inception', customerName: 'John Doe', seats: 'A1, A2', showtime: '2023-05-15 18:30', status: 'Booked', amount: 30 },
-  { id: 'T1002', movieId: '2', movieTitle: 'The Matrix', customerName: 'Jane Smith', seats: 'B3, B4', showtime: '2023-05-16 20:00', status: 'Completed', amount: 30 },
-  { id: 'T1003', movieId: '3', movieTitle: 'Interstellar', customerName: 'Robert Johnson', seats: 'C5', showtime: '2023-05-17 19:00', status: 'Cancelled', amount: 15 },
-  { id: 'T1004', movieId: '1', movieTitle: 'Inception', customerName: 'Emily Davis', seats: 'D7, D8, D9', showtime: '2023-05-18 21:30', status: 'Booked', amount: 45 },
-  { id: 'T1005', movieId: '4', movieTitle: 'Dune', customerName: 'Michael Brown', seats: 'E2', showtime: '2023-05-19 17:00', status: 'Completed', amount: 15 },
-];
+// Định nghĩa kiểu cho Ticket
+type TicketStatus = "Booked" | "Completed" | "Cancelled";
 
 interface Ticket {
   id: string;
@@ -23,185 +16,169 @@ interface Ticket {
   customerName: string;
   seats: string;
   showtime: string;
-  status: 'Booked' | 'Completed' | 'Cancelled';
+  status: TicketStatus;
   amount: number;
 }
 
-const TicketsPage = () => {
+const Tickets = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortField, setSortField] = useState<keyof Ticket>('showtime');
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
-  const [filteredTickets, setFilteredTickets] = useState<Ticket[]>(initialTickets);
+  const [statusFilter, setStatusFilter] = useState<TicketStatus | 'All'>('All');
 
-  useEffect(() => {
-    filterAndSortTickets();
-  }, [searchTerm, sortField, sortDirection]);
-
-  const filterAndSortTickets = () => {
-    let filtered = [...initialTickets];
-    
-    // Filter by search term
-    if (searchTerm.trim()) {
-      filtered = filtered.filter(ticket => 
-        ticket.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        ticket.movieTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        ticket.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        ticket.seats.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        ticket.status.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+  // Dữ liệu mẫu cho tickets
+  const [tickets, setTickets] = useState<Ticket[]>([
+    {
+      id: "T1001",
+      movieId: "M101",
+      movieTitle: "Avengers: Endgame",
+      customerName: "John Doe",
+      seats: "A1, A2",
+      showtime: "2025-05-01 15:30",
+      status: "Booked",
+      amount: 20.00
+    },
+    {
+      id: "T1002",
+      movieId: "M102",
+      movieTitle: "Spider-Man: No Way Home",
+      customerName: "Jane Smith",
+      seats: "B3, B4, B5",
+      showtime: "2025-05-02 18:00",
+      status: "Completed",
+      amount: 30.00
+    },
+    {
+      id: "T1003",
+      movieId: "M103",
+      movieTitle: "The Batman",
+      customerName: "Mike Johnson",
+      seats: "C7, C8",
+      showtime: "2025-05-03 20:15",
+      status: "Cancelled",
+      amount: 20.00
     }
+  ]);
+
+  // Lọc tickets
+  const filteredTickets = tickets.filter(ticket => {
+    const matchesSearch = ticket.movieTitle.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                        ticket.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        ticket.id.toLowerCase().includes(searchTerm.toLowerCase());
     
-    // Sort
-    filtered.sort((a, b) => {
-      const aValue = a[sortField];
-      const bValue = b[sortField];
-      
-      if (typeof aValue === 'string' && typeof bValue === 'string') {
-        return sortDirection === 'asc' 
-          ? aValue.localeCompare(bValue) 
-          : bValue.localeCompare(aValue);
-      } else if (typeof aValue === 'number' && typeof bValue === 'number') {
-        return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
-      }
-      
-      return 0;
-    });
+    const matchesStatus = statusFilter === 'All' || ticket.status === statusFilter;
     
-    setFilteredTickets(filtered);
+    return matchesSearch && matchesStatus;
+  });
+
+  // Xử lý khi xóa ticket
+  const handleDeleteTicket = (ticketId: string) => {
+    setTickets(tickets.filter(ticket => ticket.id !== ticketId));
   };
 
-  const handleSort = (field: keyof Ticket) => {
-    if (field === sortField) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortField(field);
-      setSortDirection('asc');
-    }
-  };
-
-  const getStatusBadge = (status: Ticket['status']) => {
-    switch (status) {
-      case 'Booked':
-        return <Badge variant="outline" className="bg-blue-100 text-blue-800">Booked</Badge>;
-      case 'Completed':
-        return <Badge variant="outline" className="bg-green-100 text-green-800">Completed</Badge>;
-      case 'Cancelled':
-        return <Badge variant="outline" className="bg-red-100 text-red-800">Cancelled</Badge>;
+  // Hiển thị màu sắc khác nhau cho các trạng thái
+  const getStatusBadge = (status: TicketStatus) => {
+    switch(status) {
+      case "Booked":
+        return <Badge className="bg-blue-500">Booked</Badge>;
+      case "Completed":
+        return <Badge className="bg-green-500">Completed</Badge>;
+      case "Cancelled":
+        return <Badge className="bg-red-500">Cancelled</Badge>;
       default:
-        return <Badge variant="outline">{status}</Badge>;
+        return <Badge>{status}</Badge>;
     }
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center">
-        <Ticket className="mr-2 h-8 w-8" />
-        <h1 className="text-3xl font-bold">Ticket Management</h1>
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Ticket Management</h1>
       </div>
-      
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle>Tickets</CardTitle>
-          <CardDescription>Manage movie tickets and reservations</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col sm:flex-row gap-4 mb-6">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search tickets..."
-                className="pl-10"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-            <Button variant="outline" className="flex items-center">
-              <Filter className="mr-2 h-4 w-4" />
-              Filters
-            </Button>
+
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="relative flex-grow">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="search"
+            placeholder="Search tickets..."
+            className="pl-8"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <Filter className="h-4 w-4" />
+          <select 
+            className="bg-background border border-input rounded-md px-3 py-2 text-sm"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as TicketStatus | 'All')}
+          >
+            <option value="All">All Statuses</option>
+            <option value="Booked">Booked</option>
+            <option value="Completed">Completed</option>
+            <option value="Cancelled">Cancelled</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="grid gap-4">
+        {filteredTickets.length > 0 ? (
+          filteredTickets.map(ticket => (
+            <Card key={ticket.id} className="overflow-hidden">
+              <CardContent className="p-0">
+                <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Ticket ID</p>
+                    <p className="font-medium">{ticket.id}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Movie</p>
+                    <p className="font-medium">{ticket.movieTitle}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Customer</p>
+                    <p className="font-medium">{ticket.customerName}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Seats</p>
+                    <p className="font-medium">{ticket.seats}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Showtime</p>
+                    <p className="font-medium">{ticket.showtime}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Amount</p>
+                    <p className="font-medium">${ticket.amount.toFixed(2)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Status</p>
+                    <div className="mt-1">
+                      {getStatusBadge(ticket.status)}
+                    </div>
+                  </div>
+                  <div className="flex items-end gap-2">
+                    <Button size="sm" variant="outline">View Details</Button>
+                    <Button 
+                      size="sm" 
+                      variant="destructive" 
+                      onClick={() => handleDeleteTicket(ticket.id)}
+                    >
+                      Delete
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        ) : (
+          <div className="text-center py-10">
+            <p className="text-muted-foreground">No tickets found</p>
           </div>
-          
-          <div className="rounded-md border overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[80px]">Ticket ID</TableHead>
-                  <TableHead className="cursor-pointer" onClick={() => handleSort('movieTitle')}>
-                    <div className="flex items-center">
-                      Movie
-                      {sortField === 'movieTitle' && (
-                        <ArrowUpDown className="ml-2 h-4 w-4" />
-                      )}
-                    </div>
-                  </TableHead>
-                  <TableHead className="cursor-pointer hidden md:table-cell" onClick={() => handleSort('customerName')}>
-                    <div className="flex items-center">
-                      Customer
-                      {sortField === 'customerName' && (
-                        <ArrowUpDown className="ml-2 h-4 w-4" />
-                      )}
-                    </div>
-                  </TableHead>
-                  <TableHead className="hidden lg:table-cell">Seats</TableHead>
-                  <TableHead className="cursor-pointer hidden md:table-cell" onClick={() => handleSort('showtime')}>
-                    <div className="flex items-center">
-                      Showtime
-                      {sortField === 'showtime' && (
-                        <ArrowUpDown className="ml-2 h-4 w-4" />
-                      )}
-                    </div>
-                  </TableHead>
-                  <TableHead className="cursor-pointer" onClick={() => handleSort('status')}>
-                    <div className="flex items-center">
-                      Status
-                      {sortField === 'status' && (
-                        <ArrowUpDown className="ml-2 h-4 w-4" />
-                      )}
-                    </div>
-                  </TableHead>
-                  <TableHead className="cursor-pointer text-right" onClick={() => handleSort('amount')}>
-                    <div className="flex items-center justify-end">
-                      Amount
-                      {sortField === 'amount' && (
-                        <ArrowUpDown className="ml-2 h-4 w-4" />
-                      )}
-                    </div>
-                  </TableHead>
-                  <TableHead className="w-[50px]"></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredTickets.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center py-6 text-muted-foreground">
-                      No tickets found
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredTickets.map((ticket) => (
-                    <TableRow key={ticket.id}>
-                      <TableCell className="font-medium">{ticket.id}</TableCell>
-                      <TableCell>{ticket.movieTitle}</TableCell>
-                      <TableCell className="hidden md:table-cell">{ticket.customerName}</TableCell>
-                      <TableCell className="hidden lg:table-cell">{ticket.seats}</TableCell>
-                      <TableCell className="hidden md:table-cell">{ticket.showtime}</TableCell>
-                      <TableCell>{getStatusBadge(ticket.status)}</TableCell>
-                      <TableCell className="text-right">${ticket.amount}</TableCell>
-                      <TableCell>
-                        <Button variant="ghost" size="icon">
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
+        )}
+      </div>
     </div>
   );
 };
 
-export default TicketsPage;
+export default Tickets;

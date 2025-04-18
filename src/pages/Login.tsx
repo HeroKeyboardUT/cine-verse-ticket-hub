@@ -6,11 +6,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
-import { Film } from 'lucide-react';
+import { Film, Mail, Lock } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -18,12 +20,11 @@ const Login = () => {
     e.preventDefault();
     setIsLoading(true);
 
-    // This is a mock login. In a real app, you would connect to your backend/Supabase
     try {
-      // Simulate API call
+      // Mô phỏng API call
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Mock verification - in a real app, this would be server-side
+      // Kiểm tra admin
       if (email === 'admin@example.com' && password === 'admin123') {
         localStorage.setItem('adminUser', JSON.stringify({
           id: 'admin-1',
@@ -33,33 +34,58 @@ const Login = () => {
         }));
         
         toast({
-          title: "Admin login successful",
-          description: "Welcome to the admin dashboard!",
+          title: "Đăng nhập thành công",
+          description: "Chào mừng đến với trang quản trị!",
         });
         
         navigate('/admin/movies');
         return;
       }
       
-      // For demo purposes, any other combination works as normal user
-      localStorage.setItem('user', JSON.stringify({
-        id: `user-${Math.random().toString(36).substr(2, 9)}`,
-        email,
-        name: 'Demo User',
-        isAdmin: false
-      }));
+      // Kiểm tra user demo 
+      // Trong ứng dụng thực tế, bạn sẽ kiểm tra với dữ liệu từ backend
+      const users = JSON.parse(localStorage.getItem('users') || '[]');
+      const user = users.find((u: any) => u.email === email);
       
-      toast({
-        title: "Login successful",
-        description: "Welcome back!",
-      });
-      
-      navigate('/');
+      if (user) {
+        if (password === user.password) {
+          localStorage.setItem('user', JSON.stringify({
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            isAdmin: false
+          }));
+
+          toast({
+            title: "Đăng nhập thành công",
+            description: "Chào mừng bạn quay lại!",
+          });
+          
+          navigate('/');
+        } else {
+          throw new Error("Sai mật khẩu");
+        }
+      } else {
+        // Cho demo: tự động đăng nhập với bất kỳ email nào
+        localStorage.setItem('user', JSON.stringify({
+          id: `user-${Math.random().toString(36).substr(2, 9)}`,
+          email,
+          name: email.split('@')[0],
+          isAdmin: false
+        }));
+        
+        toast({
+          title: "Đăng nhập thành công",
+          description: "Chào mừng bạn quay lại!",
+        });
+        
+        navigate('/');
+      }
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Login failed",
-        description: "Invalid email or password. Please try again.",
+        title: "Đăng nhập thất bại",
+        description: "Email hoặc mật khẩu không chính xác. Vui lòng thử lại.",
       });
     } finally {
       setIsLoading(false);
@@ -74,49 +100,76 @@ const Login = () => {
         </div>
         <Card>
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold text-center">Sign in</CardTitle>
+            <CardTitle className="text-2xl font-bold text-center">Đăng nhập</CardTitle>
             <CardDescription className="text-center">
-              Enter your credentials to access your account
+              Nhập thông tin đăng nhập của bạn
             </CardDescription>
           </CardHeader>
           <form onSubmit={handleLogin}>
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input 
-                  id="email" 
-                  type="email" 
-                  placeholder="m@example.com" 
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required 
-                />
+                <div className="relative">
+                  <Mail className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input 
+                    id="email" 
+                    type="email" 
+                    placeholder="example@email.com" 
+                    className="pl-9"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required 
+                  />
+                </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input 
-                  id="password" 
-                  type="password" 
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required 
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password">Mật khẩu</Label>
+                  <Link to="/forgot-password" className="text-sm text-primary hover:underline">
+                    Quên mật khẩu?
+                  </Link>
+                </div>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input 
+                    id="password" 
+                    type="password" 
+                    placeholder="••••••••"
+                    className="pl-9"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required 
+                  />
+                </div>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="remember" 
+                  checked={rememberMe}
+                  onCheckedChange={(checked) => setRememberMe(!!checked)}
                 />
+                <label
+                  htmlFor="remember"
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  Ghi nhớ đăng nhập
+                </label>
               </div>
             </CardContent>
             <CardFooter className="flex flex-col space-y-4">
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Signing in..." : "Sign in"}
+                {isLoading ? "Đang đăng nhập..." : "Đăng nhập"}
               </Button>
               <div className="text-center text-sm space-y-2">
                 <p className="text-muted-foreground">
-                  Don't have an account?{" "}
+                  Chưa có tài khoản?{" "}
                   <Link to="/register" className="text-primary underline underline-offset-4 hover:text-primary-focus">
-                    Sign up
+                    Đăng ký
                   </Link>
                 </p>
                 <p className="text-muted-foreground">
                   <Link to="/admin/login" className="text-primary underline underline-offset-4 hover:text-primary-focus">
-                    Admin Login
+                    Đăng nhập quản trị viên
                   </Link>
                 </p>
               </div>

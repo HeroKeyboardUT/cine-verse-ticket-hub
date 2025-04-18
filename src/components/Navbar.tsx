@@ -1,13 +1,29 @@
 
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Film, Ticket, Search, Menu, X, Home, Play, Settings } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Film, Ticket, Search, Menu, X, Home, Play, Settings, User, LogIn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Kiểm tra xem người dùng đã đăng nhập chưa
+    const user = localStorage.getItem('user');
+    if (user) {
+      setIsLoggedIn(true);
+    }
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('user');
+    setIsLoggedIn(false);
+    navigate('/');
+  };
 
   return (
     <nav className="bg-background border-b border-gray-800 sticky top-0 z-50">
@@ -65,9 +81,28 @@ const Navbar = () => {
                 <Search className="h-6 w-6" />
               </button>
             )}
-            <Button variant="default" size="sm">
-              Sign In
-            </Button>
+            
+            {isLoggedIn ? (
+              <div className="flex items-center space-x-2">
+                <Button variant="ghost" size="sm" onClick={() => navigate('/profile')}>
+                  <User className="h-4 w-4 mr-2" />
+                  Profile
+                </Button>
+                <Button variant="default" size="sm" onClick={handleLogout}>
+                  Logout
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center space-x-2">
+                <Button variant="ghost" size="sm" onClick={() => navigate('/login')}>
+                  <LogIn className="h-4 w-4 mr-2" />
+                  Sign In
+                </Button>
+                <Button variant="default" size="sm" onClick={() => navigate('/register')}>
+                  Register
+                </Button>
+              </div>
+            )}
           </div>
           
           <div className="flex md:hidden">
@@ -109,7 +144,17 @@ const Navbar = () => {
                 </div>
               </div>
               <div className="mt-3 px-2">
-                <Button className="w-full" variant="default">Sign In</Button>
+                {isLoggedIn ? (
+                  <div className="space-y-2">
+                    <Button className="w-full" variant="outline" onClick={() => navigate('/profile')}>Profile</Button>
+                    <Button className="w-full" variant="default" onClick={handleLogout}>Logout</Button>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <Button className="w-full" variant="outline" onClick={() => navigate('/login')}>Sign In</Button>
+                    <Button className="w-full" variant="default" onClick={() => navigate('/register')}>Register</Button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
