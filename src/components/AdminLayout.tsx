@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link, useNavigate, Outlet, useLocation } from 'react-router-dom';
-import { Film, Users, BarChart3, LogOut, Menu, X, Ticket, Calendar, Settings } from 'lucide-react';
+import { Film, Users, BarChart3, LogOut, Menu, X, Ticket, Calendar, Settings, Building2, Database } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 import AdminAuthGuard from './AdminAuthGuard';
@@ -27,6 +27,7 @@ const AdminLayout = () => {
   // Menu items for admin sidebar
   const menuItems = [
     { path: "/admin/movies", icon: Film, label: "Movies" },
+    { path: "/admin/cinemas", icon: Building2, label: "Cinemas" },
     { path: "/admin/users", icon: Users, label: "Users" },
     { path: "/admin/tickets", icon: Ticket, label: "Tickets" },
     { path: "/admin/showtimes", icon: Calendar, label: "Showtimes" },
@@ -41,8 +42,8 @@ const AdminLayout = () => {
         <div className={`${isSidebarOpen ? 'w-64' : 'w-20'} bg-secondary transition-all duration-300 fixed h-full z-10`}>
           <div className="flex items-center justify-between p-4 border-b border-gray-800">
             <div className="flex items-center">
-              <Film className="h-8 w-8 text-primary" />
-              {isSidebarOpen && <span className="ml-2 text-xl font-bold text-white">Admin</span>}
+              <Database className="h-8 w-8 text-primary" />
+              {isSidebarOpen && <span className="ml-2 text-xl font-bold text-white">Cinema DB</span>}
             </div>
             <Button 
               variant="ghost" 
