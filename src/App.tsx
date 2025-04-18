@@ -16,6 +16,11 @@ import AdminLogin from "./pages/admin/Login";
 import Movies from "./pages/admin/Movies";
 import Users from "./pages/admin/Users";
 import Reports from "./pages/admin/Reports";
+import Tickets from "./pages/admin/Tickets";
+import Showtimes from "./pages/admin/Showtimes";
+import Settings from "./pages/admin/Settings";
+import Register from "./pages/Register";
+import Login from "./pages/Login";
 
 const queryClient = new QueryClient();
 
@@ -76,12 +81,19 @@ const App = () => (
             } 
           />
           
+          {/* Authentication routes */}
+          <Route path="/register" element={<Register />} />
+          <Route path="/login" element={<Login />} />
+          
           {/* Admin routes */}
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin" element={<AdminLayout />}>
             <Route path="movies" element={<Movies />} />
             <Route path="users" element={<Users />} />
+            <Route path="tickets" element={<Tickets />} />
+            <Route path="showtimes" element={<Showtimes />} />
             <Route path="reports" element={<Reports />} />
+            <Route path="settings" element={<Settings />} />
           </Route>
           
           <Route path="*" element={<NotFound />} />

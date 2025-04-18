@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { Link, useNavigate, Outlet } from 'react-router-dom';
-import { Film, Users, BarChart3, LogOut, Menu, X } from 'lucide-react';
+import { Link, useNavigate, Outlet, useLocation } from 'react-router-dom';
+import { Film, Users, BarChart3, LogOut, Menu, X, Ticket, Calendar, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 import AdminAuthGuard from './AdminAuthGuard';
@@ -10,6 +10,7 @@ import { toast } from '@/hooks/use-toast';
 const AdminLayout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogout = () => {
     // Remove user from local storage
@@ -22,6 +23,16 @@ const AdminLayout = () => {
     
     navigate('/admin/login');
   };
+
+  // Menu items for admin sidebar
+  const menuItems = [
+    { path: "/admin/movies", icon: Film, label: "Movies" },
+    { path: "/admin/users", icon: Users, label: "Users" },
+    { path: "/admin/tickets", icon: Ticket, label: "Tickets" },
+    { path: "/admin/showtimes", icon: Calendar, label: "Showtimes" },
+    { path: "/admin/reports", icon: BarChart3, label: "Reports" },
+    { path: "/admin/settings", icon: Settings, label: "Settings" },
+  ];
 
   return (
     <AdminAuthGuard>
@@ -42,18 +53,26 @@ const AdminLayout = () => {
             </Button>
           </div>
           <nav className="mt-6">
-            <Link to="/admin/movies" className="flex items-center p-4 hover:bg-gray-800 transition-colors">
-              <Film size={20} className="text-gray-300" />
-              {isSidebarOpen && <span className="ml-4 text-gray-300">Movies</span>}
-            </Link>
-            <Link to="/admin/users" className="flex items-center p-4 hover:bg-gray-800 transition-colors">
-              <Users size={20} className="text-gray-300" />
-              {isSidebarOpen && <span className="ml-4 text-gray-300">Users</span>}
-            </Link>
-            <Link to="/admin/reports" className="flex items-center p-4 hover:bg-gray-800 transition-colors">
-              <BarChart3 size={20} className="text-gray-300" />
-              {isSidebarOpen && <span className="ml-4 text-gray-300">Reports</span>}
-            </Link>
+            {menuItems.map((item) => (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={`flex items-center p-4 hover:bg-gray-800 transition-colors ${
+                  location.pathname === item.path ? 'bg-gray-800' : ''
+                }`}
+              >
+                <item.icon size={20} className={`text-gray-300 ${
+                  location.pathname === item.path ? 'text-primary' : ''
+                }`} />
+                {isSidebarOpen && (
+                  <span className={`ml-4 text-gray-300 ${
+                    location.pathname === item.path ? 'text-white font-medium' : ''
+                  }`}>
+                    {item.label}
+                  </span>
+                )}
+              </Link>
+            ))}
             <Button 
               variant="ghost" 
               className="flex items-center w-full p-4 text-left hover:bg-gray-800 transition-colors"
