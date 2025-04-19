@@ -50,6 +50,23 @@ npm run dev
 - Click on "New codespace" to launch a new Codespace environment.
 - Edit files directly within the Codespace and commit and push your changes once you're done.
 
+## Tải Backend và database : 
+- npm install express mysql2 cors
+
+Trong file server.cjs, đổi thông tin trong :
+```sh
+// Kết nối database 
+const db = mysql.createConnection(
+{ 
+  host: "localhost",
+  port: 3306,
+  user: "root",
+  password: "",
+  database: "cinemasystem",
+});
+```
+thành thông tin tài khoản mysql trong máy, source đã có sẵn file sql.
+
 ## What technologies are used for this project?
 
 This project is built with:
