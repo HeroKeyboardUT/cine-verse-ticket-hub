@@ -1,127 +1,212 @@
-
-import React, { useState, useEffect } from 'react';
-import { Film, Plus, Search, Filter, ArrowUpDown, Edit, Trash2, Eye } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { movies, Movie } from '@/lib/data';
-import MovieDialog from '@/components/admin/MovieDialog';
-import { toast } from '@/hooks/use-toast';
-
-// This is a mock implementation since we don't have a real database yet
-let moviesData = [...movies];
+// @/components/admin/MovieList.tsx
+import React, { useState, useEffect } from "react";
+import {
+  Film,
+  Plus,
+  Search,
+  Filter,
+  ArrowUpDown,
+  Edit,
+  Trash2,
+  Eye,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { fetchMovies, Movie, createMovie, updateMovie } from "@/lib/data";
+import MovieDialog from "@/components/admin/MovieDialog";
+import { toast } from "@/hooks/use-toast";
 
 const MovieList = () => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [sortField, setSortField] = useState<keyof Movie>('title');
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
-  const [filteredMovies, setFilteredMovies] = useState(moviesData);
+  const [moviesData, setMoviesData] = useState<Movie[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortField, setSortField] = useState<keyof Movie>("title");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+  const [filteredMovies, setFilteredMovies] = useState<Movie[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [currentMovie, setCurrentMovie] = useState<Movie | null>(null);
-  const [dialogMode, setDialogMode] = useState<'create' | 'edit' | 'view'>('create');
+  const [dialogMode, setDialogMode] = useState<"create" | "edit" | "view">(
+    "create"
+  );
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
+  // Fetch movies from database on mount
+  useEffect(() => {
+    const loadMovies = async () => {
+      try {
+        setIsLoading(true);
+        const data = await fetchMovies();
+        setMoviesData(data);
+        setFilteredMovies(data);
+      } catch (err) {
+        setError("Failed to load movies. Please try again.");
+        toast({
+          title: "Error",
+          description: "Could not fetch movies from the database.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadMovies();
+  }, []);
+
+  // Filter and sort movies
   useEffect(() => {
     filterAndSortMovies();
   }, [searchTerm, sortField, sortDirection, moviesData]);
 
   const filterAndSortMovies = () => {
     let filtered = [...moviesData];
-    
+
     // Filter by search term
     if (searchTerm.trim()) {
-      filtered = filtered.filter(movie => 
-        movie.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        movie.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        movie.genre.some(g => g.toLowerCase().includes(searchTerm.toLowerCase()))
+      filtered = filtered.filter(
+        (movie) =>
+          movie.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (movie.description &&
+            movie.description
+              .toLowerCase()
+              .includes(searchTerm.toLowerCase())) ||
+          movie.genre.some((g) =>
+            g.toLowerCase().includes(searchTerm.toLowerCase())
+          )
       );
     }
-    
+
     // Sort
     filtered.sort((a, b) => {
       let aVal = a[sortField];
       let bVal = b[sortField];
-      
-      // Handle special case for genre which is an array
-      if (sortField === 'genre') {
-        aVal = a.genre.join(', ');
-        bVal = b.genre.join(', ');
+
+      if (sortField === "genre") {
+        aVal = a.genre.join(", ");
+        bVal = b.genre.join(", ");
       }
-      
-      if (typeof aVal === 'string' && typeof bVal === 'string') {
-        return sortDirection === 'asc' 
-          ? aVal.localeCompare(bVal) 
+
+      if (typeof aVal === "string" && typeof bVal === "string") {
+        return sortDirection === "asc"
+          ? aVal.localeCompare(bVal)
           : bVal.localeCompare(aVal);
-      } else if (typeof aVal === 'number' && typeof bVal === 'number') {
-        return sortDirection === 'asc' ? aVal - bVal : bVal - aVal;
+      } else if (typeof aVal === "number" && typeof bVal === "number") {
+        return sortDirection === "asc" ? aVal - bVal : bVal - aVal;
       }
-      
+
       return 0;
     });
-    
+
     setFilteredMovies(filtered);
   };
 
   const handleSort = (field: keyof Movie) => {
     if (field === sortField) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
     } else {
       setSortField(field);
-      setSortDirection('asc');
+      setSortDirection("asc");
     }
   };
 
   const handleCreateMovie = () => {
     setCurrentMovie(null);
-    setDialogMode('create');
+    setDialogMode("create");
     setIsDialogOpen(true);
   };
 
   const handleEditMovie = (movie: Movie) => {
     setCurrentMovie(movie);
-    setDialogMode('edit');
+    setDialogMode("edit");
     setIsDialogOpen(true);
   };
 
   const handleViewMovie = (movie: Movie) => {
     setCurrentMovie(movie);
-    setDialogMode('view');
+    setDialogMode("view");
     setIsDialogOpen(true);
   };
 
-  const handleDeleteMovie = (movieId: string) => {
-    if (confirm('Are you sure you want to delete this movie?')) {
-      moviesData = moviesData.filter(movie => movie.id !== movieId);
-      filterAndSortMovies();
+  // API call to delete a movie
+  const deleteMovie = async (movieId: string) => {
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/movies/${movieId}`,
+        {
+          method: "DELETE",
+        }
+      );
+      if (!response.ok) {
+        throw new Error("Failed to delete movie");
+      }
+    } catch (err) {
+      throw new Error("Error deleting movie: " + (err as Error).message);
+    }
+  };
+
+  const handleDeleteMovie = async (movieId: string) => {
+    if (confirm("Are you sure you want to delete this movie?")) {
+      try {
+        await deleteMovie(movieId);
+        setMoviesData((prev) => prev.filter((movie) => movie.id !== movieId));
+        toast({
+          title: "Movie deleted",
+          description: "The movie has been successfully removed.",
+        });
+      } catch (err) {
+        toast({
+          title: "Error",
+          description: (err as Error).message,
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+  const handleSaveMovie = async (movie: Movie) => {
+    try {
+      if (dialogMode === "create") {
+        const newMovie = await createMovie(movie);
+        setMoviesData((prev) => [...prev, newMovie]); // Sử dụng newMovie từ backend
+        toast({
+          title: "Movie created",
+          description: `"${newMovie.title}" has been added to the database.`,
+        });
+      } else if (dialogMode === "edit") {
+        const updatedMovie = await updateMovie(movie);
+        setMoviesData((prev) =>
+          prev.map((m) => (m.id === updatedMovie.id ? updatedMovie : m))
+        );
+        toast({
+          title: "Movie updated",
+          description: `"${updatedMovie.title}" has been updated successfully.`,
+        });
+      }
+      setIsDialogOpen(false);
+    } catch (err) {
       toast({
-        title: "Movie deleted",
-        description: "The movie has been successfully removed.",
+        title: "Error",
+        description: (err as Error).message,
+        variant: "destructive",
       });
     }
   };
 
-  const handleSaveMovie = (movie: Movie) => {
-    if (dialogMode === 'create') {
-      // In a real app, the ID would be generated on the server
-      const newMovie = {
-        ...movie,
-        id: (Math.max(...moviesData.map(m => parseInt(m.id))) + 1).toString()
-      };
-      moviesData = [...moviesData, newMovie];
-      toast({
-        title: "Movie created",
-        description: `"${movie.title}" has been added to the database.`,
-      });
-    } else if (dialogMode === 'edit') {
-      moviesData = moviesData.map(m => m.id === movie.id ? movie : m);
-      toast({
-        title: "Movie updated",
-        description: `"${movie.title}" has been updated successfully.`,
-      });
-    }
-    setIsDialogOpen(false);
-    filterAndSortMovies();
-  };
+  if (isLoading) {
+    return <div>Loading movies...</div>;
+  }
+
+  if (error) {
+    return <div>{error}</div>;
+  }
 
   return (
     <>
@@ -136,7 +221,7 @@ const MovieList = () => {
             Add New Movie
           </Button>
         </div>
-        
+
         <Card>
           <CardHeader className="pb-3">
             <CardTitle>Movie List</CardTitle>
@@ -157,40 +242,41 @@ const MovieList = () => {
                 Filters
               </Button>
             </div>
-            
+
             <div className="rounded-md border overflow-hidden">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-[80px]">ID</TableHead>
-                    <TableHead className="cursor-pointer" onClick={() => handleSort('title')}>
+                    <TableHead
+                      className="cursor-pointer"
+                      onClick={() => handleSort("title")}
+                    >
                       <div className="flex items-center">
                         Title
-                        {sortField === 'title' && (
+                        {sortField === "title" && (
                           <ArrowUpDown className="ml-2 h-4 w-4" />
                         )}
                       </div>
                     </TableHead>
-                    <TableHead className="cursor-pointer hidden md:table-cell" onClick={() => handleSort('genre')}>
-                      <div className="flex items-center">
-                        Genre
-                        {sortField === 'genre' && (
-                          <ArrowUpDown className="ml-2 h-4 w-4" />
-                        )}
-                      </div>
-                    </TableHead>
-                    <TableHead className="cursor-pointer hidden lg:table-cell" onClick={() => handleSort('rating')}>
+                    <TableHead
+                      className="cursor-pointer hidden lg:table-cell"
+                      onClick={() => handleSort("customerRating")} // Sửa rating thành customerRating
+                    >
                       <div className="flex items-center">
                         Rating
-                        {sortField === 'rating' && (
+                        {sortField === "customerRating" && (
                           <ArrowUpDown className="ml-2 h-4 w-4" />
                         )}
                       </div>
                     </TableHead>
-                    <TableHead className="cursor-pointer hidden lg:table-cell" onClick={() => handleSort('releaseDate')}>
+                    <TableHead
+                      className="cursor-pointer hidden lg:table-cell"
+                      onClick={() => handleSort("releaseDate")}
+                    >
                       <div className="flex items-center">
                         Release Date
-                        {sortField === 'releaseDate' && (
+                        {sortField === "releaseDate" && (
                           <ArrowUpDown className="ml-2 h-4 w-4" />
                         )}
                       </div>
@@ -201,27 +287,47 @@ const MovieList = () => {
                 <TableBody>
                   {filteredMovies.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
+                      <TableCell
+                        colSpan={6}
+                        className="text-center py-6 text-muted-foreground"
+                      >
                         No movies found
                       </TableCell>
                     </TableRow>
                   ) : (
                     filteredMovies.map((movie) => (
                       <TableRow key={movie.id}>
-                        <TableCell className="font-medium">{movie.id}</TableCell>
+                        <TableCell className="font-medium">
+                          {movie.id}
+                        </TableCell>
                         <TableCell>{movie.title}</TableCell>
-                        <TableCell className="hidden md:table-cell">{movie.genre.join(', ')}</TableCell>
-                        <TableCell className="hidden lg:table-cell">{movie.rating}</TableCell>
-                        <TableCell className="hidden lg:table-cell">{movie.releaseDate}</TableCell>
+                        <TableCell className="hidden lg:table-cell">
+                          {movie.customerRating}
+                        </TableCell>
+                        <TableCell className="hidden lg:table-cell">
+                          {movie.releaseDate}
+                        </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
-                            <Button variant="ghost" size="icon" onClick={() => handleViewMovie(movie)}>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleViewMovie(movie)}
+                            >
                               <Eye className="h-4 w-4" />
                             </Button>
-                            <Button variant="ghost" size="icon" onClick={() => handleEditMovie(movie)}>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleEditMovie(movie)}
+                            >
                               <Edit className="h-4 w-4" />
                             </Button>
-                            <Button variant="ghost" size="icon" onClick={() => handleDeleteMovie(movie.id)}>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDeleteMovie(movie.id)}
+                            >
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </div>
@@ -235,7 +341,7 @@ const MovieList = () => {
           </CardContent>
         </Card>
       </div>
-      
+
       <MovieDialog
         isOpen={isDialogOpen}
         onOpenChange={setIsDialogOpen}

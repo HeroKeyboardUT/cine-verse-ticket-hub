@@ -1,8 +1,7 @@
-
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { Star, Clock } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
+import React from "react";
+import { Link } from "react-router-dom";
+import { Star, Clock } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 
 interface MovieCardProps {
   movie: {
@@ -20,9 +19,9 @@ const MovieCard = ({ movie }: MovieCardProps) => {
     <Link to={`/movie/${movie.id}`}>
       <Card className="overflow-hidden bg-card border-0 rounded-lg movie-card">
         <div className="relative aspect-[2/3] overflow-hidden">
-          <img 
-            src={movie.posterUrl} 
-            alt={movie.title} 
+          <img
+            src={movie.posterUrl}
+            alt={movie.title}
             className="object-cover w-full h-full transition-transform duration-300 hover:scale-110"
           />
           <div className="absolute top-2 right-2 bg-black/70 text-white text-xs py-1 px-2 rounded-md flex items-center">

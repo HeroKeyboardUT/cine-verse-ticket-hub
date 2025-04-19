@@ -1,217 +1,387 @@
-
-import React, { useState } from 'react';
-import { Building2, Plus, Search, Filter, ArrowUpDown, Edit, Trash2, Map, Eye } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { toast } from '@/hooks/use-toast';
-
-// Mock cinema data
-const initialCinemas = [
-  { id: '1', name: 'Cinema City Downtown', address: '123 Main St, Downtown', screens: 8, totalSeats: 1200, status: 'Active' },
-  { id: '2', name: 'Riverside Multiplex', address: '456 River Rd, Riverside', screens: 6, totalSeats: 900, status: 'Active' },
-  { id: '3', name: 'West Mall Cinema', address: '789 West Mall, Westside', screens: 10, totalSeats: 1500, status: 'Active' },
-  { id: '4', name: 'East End Pictures', address: '101 East Blvd, Eastside', screens: 4, totalSeats: 600, status: 'Maintenance' },
-  { id: '5', name: 'North Star Cineplex', address: '202 North Ave, Northside', screens: 12, totalSeats: 1800, status: 'Active' },
-];
+import React, { useEffect, useState } from "react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { toast } from "@/hooks/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface Cinema {
   id: string;
   name: string;
-  address: string;
-  screens: number;
-  totalSeats: number;
-  status: string;
+  openingHours: string;
+  closingHours: string;
+  location: string;
+  phoneNumbers: string[];
 }
 
-const CinemasPage = () => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [sortField, setSortField] = useState<keyof Cinema>('name');
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
-  const [cinemas, setCinemas] = useState<Cinema[]>(initialCinemas);
-  const [filteredCinemas, setFilteredCinemas] = useState<Cinema[]>(initialCinemas);
+const Cinemas = () => {
+  const [cinemas, setCinemas] = useState<Cinema[]>([]);
+  const [filteredCinemas, setFilteredCinemas] = useState<Cinema[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [currentCinema, setCurrentCinema] = useState<Cinema | null>(null);
 
-  // Filter and sort cinemas
-  React.useEffect(() => {
-    let filtered = [...cinemas];
-    
-    // Filter by search term
-    if (searchTerm.trim()) {
-      filtered = filtered.filter(cinema => 
-        cinema.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        cinema.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        cinema.status.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-    
-    // Sort
-    filtered.sort((a, b) => {
-      const aValue = a[sortField];
-      const bValue = b[sortField];
-      
-      if (typeof aValue === 'string' && typeof bValue === 'string') {
-        return sortDirection === 'asc' 
-          ? aValue.localeCompare(bValue) 
-          : bValue.localeCompare(aValue);
-      } else if (typeof aValue === 'number' && typeof bValue === 'number') {
-        return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
+  useEffect(() => {
+    const fetchCinemas = async () => {
+      try {
+        console.log("Đang gọi API: http://localhost:5000/api/cinemas");
+        const response = await fetch("http://localhost:5000/api/cinemas");
+        if (!response.ok) {
+          throw new Error(
+            `Lỗi HTTP: ${response.status} - ${response.statusText}`
+          );
+        }
+        const data = await response.json();
+        console.log("Dữ liệu API:", data);
+        const mappedCinemas: Cinema[] = data.data
+          ? data.data.map((cinema: any) => ({
+              id: cinema.CinemaID,
+              name: cinema.Name,
+              openingHours: cinema.OpeningHours,
+              closingHours: cinema.ClosingHours,
+              location: cinema.Location,
+              phoneNumbers: cinema.PhoneNumbers || [],
+            }))
+          : [];
+        setCinemas(mappedCinemas);
+        setFilteredCinemas(mappedCinemas);
+      } catch (err) {
+        console.error("Lỗi fetch:", err);
+        setError("Không thể tải danh sách rạp chiếu phim.");
+        toast({
+          title: "Lỗi",
+          description: (err as Error).message,
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
       }
-      
-      return 0;
-    });
-    
+    };
+
+    fetchCinemas();
+  }, []);
+
+  // Xử lý tìm kiếm
+  useEffect(() => {
+    const filtered = cinemas.filter(
+      (cinema) =>
+        cinema.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        cinema.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        cinema.phoneNumbers.some((phone) =>
+          phone.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+    );
     setFilteredCinemas(filtered);
-  }, [searchTerm, sortField, sortDirection, cinemas]);
+  }, [searchTerm, cinemas]);
 
-  const handleSort = (field: keyof Cinema) => {
-    if (field === sortField) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortField(field);
-      setSortDirection('asc');
-    }
-  };
+  const handleSaveCinema = async (cinema: Cinema) => {
+    try {
+      console.log("Dữ liệu gửi đi:", cinema); // Log để debug
+      if (currentCinema && !cinema.id) {
+        throw new Error("CinemaID không được để trống khi cập nhật");
+      }
 
-  const handleDeleteCinema = (cinemaId: string) => {
-    if (confirm('Are you sure you want to delete this cinema?')) {
-      setCinemas(cinemas.filter(cinema => cinema.id !== cinemaId));
+      const response = currentCinema
+        ? await fetch(`http://localhost:5000/api/cinemas/${cinema.id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              Name: cinema.name,
+              OpeningHours: cinema.openingHours,
+              ClosingHours: cinema.closingHours,
+              Location: cinema.location,
+              PhoneNumbers: cinema.phoneNumbers.filter((phone) => phone.trim()),
+            }),
+          })
+        : await fetch("http://localhost:5000/api/cinemas", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              CinemaID: cinema.id,
+              Name: cinema.name,
+              OpeningHours: cinema.openingHours,
+              ClosingHours: cinema.closingHours,
+              Location: cinema.location,
+              PhoneNumbers: cinema.phoneNumbers.filter((phone) => phone.trim()),
+            }),
+          });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          errorData.message || "Không thể lưu thông tin rạp chiếu phim."
+        );
+      }
+
       toast({
-        title: "Cinema deleted",
-        description: "The cinema has been successfully removed.",
+        title: currentCinema ? "Cập nhật thành công" : "Thêm thành công",
+        description: `Rạp chiếu phim đã được ${
+          currentCinema ? "cập nhật" : "thêm"
+        }.`,
+      });
+
+      setIsDialogOpen(false);
+      setCurrentCinema(null);
+
+      // Cập nhật danh sách rạp
+      const updatedCinemas = await fetch(
+        "http://localhost:5000/api/cinemas"
+      ).then((res) => res.json());
+      setCinemas(
+        updatedCinemas.data.map((cinema: any) => ({
+          id: cinema.CinemaID,
+          name: cinema.Name,
+          openingHours: cinema.OpeningHours,
+          closingHours: cinema.ClosingHours,
+          location: cinema.Location,
+          phoneNumbers: cinema.PhoneNumbers || [],
+        }))
+      );
+      setFilteredCinemas(
+        updatedCinemas.data.map((cinema: any) => ({
+          id: cinema.CinemaID,
+          name: cinema.Name,
+          openingHours: cinema.OpeningHours,
+          closingHours: cinema.ClosingHours,
+          location: cinema.Location,
+          phoneNumbers: cinema.PhoneNumbers || [],
+        }))
+      );
+    } catch (err) {
+      console.error("Lỗi khi lưu Cinema:", err);
+      toast({
+        title: "Lỗi",
+        description: (err as Error).message,
+        variant: "destructive",
       });
     }
   };
 
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center">
-        <Building2 className="mr-2 h-8 w-8" />
-        <h1 className="text-3xl font-bold">Cinema Management</h1>
+  const handleDeleteCinema = async (cinemaId: string) => {
+    if (window.confirm("Bạn có chắc chắn muốn xóa rạp chiếu phim này?")) {
+      try {
+        const response = await fetch(
+          `http://localhost:5000/api/cinemas/${cinemaId}`,
+          {
+            method: "DELETE",
+          }
+        );
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || "Không thể xóa rạp chiếu phim.");
+        }
+
+        toast({
+          title: "Xóa thành công",
+          description: "Rạp chiếu phim đã được xóa.",
+        });
+
+        setCinemas((prev) => prev.filter((cinema) => cinema.id !== cinemaId));
+        setFilteredCinemas((prev) =>
+          prev.filter((cinema) => cinema.id !== cinemaId)
+        );
+      } catch (err) {
+        console.error("Lỗi khi xóa Cinema:", err);
+        toast({
+          title: "Lỗi",
+          description: (err as Error).message,
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="text-center py-8">
+        Đang tải danh sách rạp chiếu phim...
       </div>
-      
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle>Cinemas</CardTitle>
-          <CardDescription>Manage cinema locations and properties</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col sm:flex-row gap-4 mb-6">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+    );
+  }
+
+  if (error) {
+    return <div className="text-center text-red-500 py-8">{error}</div>;
+  }
+
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-3xl font-bold mb-6">Danh sách rạp chiếu phim</h1>
+      <div className="mb-4 flex justify-between">
+        <Input
+          placeholder="Tìm kiếm rạp theo tên, địa điểm hoặc số điện thoại..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="max-w-md"
+        />
+        <Button onClick={() => setIsDialogOpen(true)}>Thêm rạp</Button>
+      </div>
+      {filteredCinemas.length === 0 ? (
+        <div className="text-center py-8">
+          Không tìm thấy rạp chiếu phim nào.
+        </div>
+      ) : (
+        <div className="rounded-md border overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>ID</TableHead>
+                <TableHead>Tên rạp</TableHead>
+                <TableHead>Giờ mở cửa</TableHead>
+                <TableHead>Giờ đóng cửa</TableHead>
+                <TableHead>Địa điểm</TableHead>
+                <TableHead>Số điện thoại</TableHead>
+                <TableHead>Hành động</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredCinemas.map((cinema) => (
+                <TableRow key={cinema.id}>
+                  <TableCell>{cinema.id}</TableCell>
+                  <TableCell>{cinema.name}</TableCell>
+                  <TableCell>{cinema.openingHours}</TableCell>
+                  <TableCell>{cinema.closingHours}</TableCell>
+                  <TableCell>{cinema.location}</TableCell>
+                  <TableCell>
+                    {cinema.phoneNumbers.length > 0
+                      ? cinema.phoneNumbers.join(", ")
+                      : "Không có"}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          console.log("Chọn sửa Cinema:", cinema); // Log để debug
+                          setCurrentCinema(cinema);
+                          setIsDialogOpen(true);
+                        }}
+                      >
+                        Sửa
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleDeleteCinema(cinema.id)}
+                      >
+                        Xóa
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+
+      <Dialog
+        open={isDialogOpen}
+        onOpenChange={(open) => {
+          setIsDialogOpen(open);
+          if (!open) setCurrentCinema(null); // Reset khi đóng dialog
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {currentCinema
+                ? "Cập nhật rạp chiếu phim"
+                : "Thêm rạp chiếu phim"}
+            </DialogTitle>
+          </DialogHeader>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              const formData = new FormData(e.currentTarget);
+              const cinema: Cinema = {
+                id: currentCinema
+                  ? currentCinema.id
+                  : (formData.get("id") as string), // Giữ id khi cập nhật
+                name: formData.get("name") as string,
+                openingHours: formData.get("openingHours") as string,
+                closingHours: formData.get("closingHours") as string,
+                location: formData.get("location") as string,
+                phoneNumbers: (formData.get("phoneNumbers") as string)
+                  .split(",")
+                  .map((phone) => phone.trim())
+                  .filter((phone) => phone),
+              };
+              console.log("Cinema trước khi gửi:", cinema); // Log để debug
+              handleSaveCinema(cinema);
+            }}
+          >
+            <div className="space-y-4">
               <Input
-                placeholder="Search cinemas..."
-                className="pl-10"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                name="id"
+                placeholder="ID (ví dụ: CIN001)"
+                defaultValue={currentCinema?.id || ""}
+                disabled={!!currentCinema} // Vô hiệu hóa khi cập nhật
+                required={!currentCinema} // Bắt buộc khi thêm mới
+              />
+              <Input
+                name="name"
+                placeholder="Tên rạp"
+                defaultValue={currentCinema?.name || ""}
+                required
+              />
+              <Input
+                name="openingHours"
+                placeholder="Giờ mở cửa (HH:mm)"
+                defaultValue={currentCinema?.openingHours || ""}
+                required
+              />
+              <Input
+                name="closingHours"
+                placeholder="Giờ đóng cửa (HH:mm)"
+                defaultValue={currentCinema?.closingHours || ""}
+                required
+              />
+              <Input
+                name="location"
+                placeholder="Địa điểm"
+                defaultValue={currentCinema?.location || ""}
+                required
+              />
+              <Input
+                name="phoneNumbers"
+                placeholder="Số điện thoại (cách nhau bằng dấu phẩy)"
+                defaultValue={currentCinema?.phoneNumbers.join(", ") || ""}
               />
             </div>
-            <Button variant="outline" className="flex items-center">
-              <Filter className="mr-2 h-4 w-4" />
-              Filters
-            </Button>
-            <Button className="flex items-center">
-              <Plus className="mr-2 h-4 w-4" />
-              Add Cinema
-            </Button>
-          </div>
-          
-          <div className="rounded-md border overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[80px]">ID</TableHead>
-                  <TableHead className="cursor-pointer" onClick={() => handleSort('name')}>
-                    <div className="flex items-center">
-                      Name
-                      {sortField === 'name' && (
-                        <ArrowUpDown className="ml-2 h-4 w-4" />
-                      )}
-                    </div>
-                  </TableHead>
-                  <TableHead className="cursor-pointer hidden md:table-cell" onClick={() => handleSort('address')}>
-                    <div className="flex items-center">
-                      Address
-                      {sortField === 'address' && (
-                        <ArrowUpDown className="ml-2 h-4 w-4" />
-                      )}
-                    </div>
-                  </TableHead>
-                  <TableHead className="cursor-pointer hidden md:table-cell" onClick={() => handleSort('screens')}>
-                    <div className="flex items-center">
-                      Screens
-                      {sortField === 'screens' && (
-                        <ArrowUpDown className="ml-2 h-4 w-4" />
-                      )}
-                    </div>
-                  </TableHead>
-                  <TableHead className="cursor-pointer hidden lg:table-cell" onClick={() => handleSort('totalSeats')}>
-                    <div className="flex items-center">
-                      Total Seats
-                      {sortField === 'totalSeats' && (
-                        <ArrowUpDown className="ml-2 h-4 w-4" />
-                      )}
-                    </div>
-                  </TableHead>
-                  <TableHead className="cursor-pointer" onClick={() => handleSort('status')}>
-                    <div className="flex items-center">
-                      Status
-                      {sortField === 'status' && (
-                        <ArrowUpDown className="ml-2 h-4 w-4" />
-                      )}
-                    </div>
-                  </TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredCinemas.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center py-6 text-muted-foreground">
-                      No cinemas found
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredCinemas.map((cinema) => (
-                    <TableRow key={cinema.id}>
-                      <TableCell className="font-medium">{cinema.id}</TableCell>
-                      <TableCell>{cinema.name}</TableCell>
-                      <TableCell className="hidden md:table-cell">{cinema.address}</TableCell>
-                      <TableCell className="hidden md:table-cell">{cinema.screens}</TableCell>
-                      <TableCell className="hidden lg:table-cell">{cinema.totalSeats}</TableCell>
-                      <TableCell>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          cinema.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'
-                        }`}>
-                          {cinema.status}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button variant="ghost" size="icon">
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon">
-                            <Map className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon">
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" onClick={() => handleDeleteCinema(cinema.id)}>
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
+            <div className="mt-4 flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setIsDialogOpen(false);
+                  setCurrentCinema(null);
+                }}
+              >
+                Hủy
+              </Button>
+              <Button type="submit">Lưu</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
 
-export default CinemasPage;
+export default Cinemas;
