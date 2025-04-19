@@ -67,6 +67,10 @@ const db = mysql.createConnection(
 ```
 thành thông tin tài khoản mysql trong máy, source đã có sẵn file sql.
 
+## Lúc chạy mở 2 terminal, 1 cái chạy server, 1 cái chạy frontend:
+- node server.cjs
+- npm run dev
+
 ## What technologies are used for this project?
 
 This project is built with:
