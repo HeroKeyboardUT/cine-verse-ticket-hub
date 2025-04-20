@@ -7,7 +7,6 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import MovieDetails from "./pages/MovieDetails";
 import SeatBooking from "./pages/SeatBooking";
-import BookingConfirmation from "./pages/BookingConfirmation";
 import WatchMovie from "./pages/WatchMovie";
 import NotFound from "./pages/NotFound";
 import Navbar from "./components/Navbar";
@@ -65,18 +64,6 @@ const App = () => (
                 <Navbar />
                 <div className="flex-grow">
                   <SeatBooking />
-                </div>
-                <Footer />
-              </div>
-            } 
-          />
-          <Route 
-            path="/booking-confirmation/:orderId" 
-            element={
-              <div className="min-h-screen flex flex-col">
-                <Navbar />
-                <div className="flex-grow">
-                  <BookingConfirmation />
                 </div>
                 <Footer />
               </div>
