@@ -1,24 +1,25 @@
-const express = require("express");
-require("dotenv").config();
-const database = require("./config/database");
-const cors = require("cors");
-const routesApiVer1 = require("./api/v1/routes/index.route");
+import express from 'express';
+import dotenv from 'dotenv';
+import cors from 'cors';
+import routes from './api/routes/index.route.js';
+import bodyParser from 'body-parser';
+import cookieParser from 'cookie-parser';
+
+// Load .env
+dotenv.config();
+
 const app = express();
-const port = process.env.PORT;
-const bodyParser = require("body-parser");
-const cookieParser = require("cookie-parser");
+const port = process.env.PORT || 5000; // fallback 
 
+// Middleware
 app.use(cors());
-
-database.connect();
-
 app.use(bodyParser.json());
-
 app.use(cookieParser());
-// Routes version 1
-routesApiVer1(app);
 
+// Routing
+routes(app);
 
+//Listening
 app.listen(port, () => {
-    console.log(`App listening on port ${port}`);
+  console.log(`App listening on port ${port}`);
 });
