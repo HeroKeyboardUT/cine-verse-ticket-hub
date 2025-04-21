@@ -21,7 +21,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { fetchMovies, Movie, createMovie, updateMovie } from "@/lib/data";
+import {
+  fetchMovies,
+  Movie,
+  createMovie,
+  updateMovie,
+  deleteMovie,
+} from "@/lib/data_movies";
 import MovieDialog from "@/components/admin/MovieDialog";
 import { toast } from "@/hooks/use-toast";
 
@@ -133,23 +139,6 @@ const MovieList = () => {
     setCurrentMovie(movie);
     setDialogMode("view");
     setIsDialogOpen(true);
-  };
-
-  // API call to delete a movie
-  const deleteMovie = async (movieId: string) => {
-    try {
-      const response = await fetch(
-        `http://localhost:5000/api/movies/${movieId}`,
-        {
-          method: "DELETE",
-        }
-      );
-      if (!response.ok) {
-        throw new Error("Failed to delete movie");
-      }
-    } catch (err) {
-      throw new Error("Error deleting movie: " + (err as Error).message);
-    }
   };
 
   const handleDeleteMovie = async (movieId: string) => {

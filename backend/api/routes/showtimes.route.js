@@ -1,9 +1,19 @@
-import showtimesController from '../controllers/showtimes.controller.js';
-import express from 'express';
+import showtimeController from "../controllers/showtime.controller.js";
+import express from "express";
 
-route = express.Router();
+const showtimeRoute = express.Router();
 
-route.get('/:cinemaId/:roomNum/:startTime/seats', showtimesController.getSeat);
-route.post('/', showtimesController.createShowtime);
+// GET API
+showtimeRoute.get("/", showtimeController.getAllShowtimes);
+showtimeRoute.get("/:id", showtimeController.getShowtimeById);
 
-export default route;
+// Create API
+showtimeRoute.post("/", showtimeController.createShowtime);
+
+// PUT API
+showtimeRoute.put("/:id", showtimeController.updateShowtime);
+
+// DELETE API
+showtimeRoute.delete("/:id", showtimeController.deleteShowtime);
+
+export default showtimeRoute;

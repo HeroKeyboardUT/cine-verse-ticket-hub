@@ -1,7 +1,6 @@
-
-import React from 'react';
-import MovieCard from './MovieCard';
-import { Movie } from '@/lib/data';
+import React from "react";
+import MovieCard from "./MovieCard";
+import { Movie } from "@/lib/data_movies";
 
 interface MovieGridProps {
   title: string;

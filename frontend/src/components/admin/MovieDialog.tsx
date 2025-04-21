@@ -11,7 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Movie, createMovie, updateMovie } from "@/lib/data";
+import { Movie, createMovie, updateMovie } from "@/lib/data_movies";
 import { toast } from "@/hooks/use-toast";
 
 interface MovieDialogProps {

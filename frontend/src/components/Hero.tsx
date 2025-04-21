@@ -35,7 +35,7 @@ const Hero = ({ movie }: HeroProps) => {
           <div className="flex flex-wrap items-center gap-4 mb-4 text-sm">
             <div className="flex items-center">
               <Star className="h-5 w-5 text-yellow-400 mr-1" />
-              <span>{movie.rating}/5</span>
+              <span>{movie.rating}/10.0</span>
             </div>
             <div className="flex items-center">
               <Clock className="h-4 w-4 text-gray-400 mr-1" />

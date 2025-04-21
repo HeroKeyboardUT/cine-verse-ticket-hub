@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { fetchMovies, Movie } from "@/lib/data";
+import { fetchMovieById, Movie } from "@/lib/data_movies";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Clock, Calendar, Star, Ticket, Play } from "lucide-react";
 import MovieGrid from "@/components/MovieGrid";
+import { set } from "date-fns";
 
 const MovieDetails = () => {
   const { movieId } = useParams<{ movieId: string }>();
@@ -16,10 +17,10 @@ const MovieDetails = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const movies = await fetchMovies(); // Gọi API để lấy danh sách phim
-        const currentMovie = movies.find((m) => m.id === movieId);
-        setMovie(currentMovie || null);
-        setSimilarMovies(movies.filter((m) => m.id !== movieId).slice(0, 6));
+        const fetchedMovie = await fetchMovieById(movieId);
+        // console.log("Fetched movie:", fetchedMovie);
+
+        setMovie(fetchedMovie);
       } catch (err) {
         setError("Không thể tải thông tin phim");
       } finally {
@@ -87,7 +88,7 @@ const MovieDetails = () => {
               <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mb-4 text-sm">
                 <div className="flex items-center">
                   <Star className="h-5 w-5 text-yellow-400 mr-1" />
-                  <span>{movie.rating}/5</span>
+                  <span>{movie.customerRating}/5</span>
                 </div>
                 <div className="flex items-center">
                   <Clock className="h-4 w-4 text-gray-400 mr-1" />
@@ -99,7 +100,7 @@ const MovieDetails = () => {
                 </div>
               </div>
 
-              <div className="flex flex-wrap gap-2 mb-6">
+              {/* <div className="flex flex-wrap gap-2 mb-6">
                 {movie.genre.map((genre, index) => (
                   <span
                     key={index}
@@ -108,7 +109,7 @@ const MovieDetails = () => {
                     {genre}
                   </span>
                 ))}
-              </div>
+              </div> */}
 
               <p className="text-gray-300 mb-6 max-w-2xl">
                 {movie.description}
@@ -149,7 +150,7 @@ const MovieDetails = () => {
             <TabsTrigger value="details">Chi tiết</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="showtimes" className="py-6">
+          {/* <TabsContent value="showtimes" className="py-6">
             <h2 className="text-xl font-semibold mb-6">Lịch chiếu khả dụng</h2>
 
             {movie.showtimes.map((showtime, index) => (
@@ -169,7 +170,7 @@ const MovieDetails = () => {
                 </div>
               </div>
             ))}
-          </TabsContent>
+          </TabsContent> */}
 
           <TabsContent value="details" className="py-6">
             <div className="space-y-6">
@@ -185,7 +186,7 @@ const MovieDetails = () => {
 
               <div>
                 <h3 className="text-lg font-semibold mb-2">Đạo diễn</h3>
-                <p className="text-gray-300">Thông tin không khả dụng</p>
+                <p className="text-gray-300">{movie.director}</p>
               </div>
             </div>
           </TabsContent>

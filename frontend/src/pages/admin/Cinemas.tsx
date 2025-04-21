@@ -16,15 +16,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-
-interface Cinema {
-  id: string;
-  name: string;
-  openingHours: string;
-  closingHours: string;
-  location: string;
-  phoneNumbers: string[];
-}
+import {
+  Cinema,
+  fetchCinemas,
+  saveCinema,
+  deleteCinema,
+} from "@/lib/data_cinemas";
 
 const Cinemas = () => {
   const [cinemas, setCinemas] = useState<Cinema[]>([]);
@@ -36,29 +33,11 @@ const Cinemas = () => {
   const [currentCinema, setCurrentCinema] = useState<Cinema | null>(null);
 
   useEffect(() => {
-    const fetchCinemas = async () => {
+    const loadCinemas = async () => {
       try {
-        console.log("Đang gọi API: http://localhost:5000/api/cinemas");
-        const response = await fetch("http://localhost:5000/api/cinemas");
-        if (!response.ok) {
-          throw new Error(
-            `Lỗi HTTP: ${response.status} - ${response.statusText}`
-          );
-        }
-        const data = await response.json();
-        console.log("Dữ liệu API:", data);
-        const mappedCinemas: Cinema[] = data.data
-          ? data.data.map((cinema: any) => ({
-              id: cinema.CinemaID,
-              name: cinema.Name,
-              openingHours: cinema.OpeningHours,
-              closingHours: cinema.ClosingHours,
-              location: cinema.Location,
-              phoneNumbers: cinema.PhoneNumbers || [],
-            }))
-          : [];
-        setCinemas(mappedCinemas);
-        setFilteredCinemas(mappedCinemas);
+        const fetchedCinemas = await fetchCinemas();
+        setCinemas(fetchedCinemas);
+        setFilteredCinemas(fetchedCinemas);
       } catch (err) {
         console.error("Lỗi fetch:", err);
         setError("Không thể tải danh sách rạp chiếu phim.");
@@ -72,7 +51,7 @@ const Cinemas = () => {
       }
     };
 
-    fetchCinemas();
+    loadCinemas();
   }, []);
 
   // Xử lý tìm kiếm
@@ -90,77 +69,21 @@ const Cinemas = () => {
 
   const handleSaveCinema = async (cinema: Cinema) => {
     try {
-      console.log("Dữ liệu gửi đi:", cinema); // Log để debug
-      if (currentCinema && !cinema.id) {
-        throw new Error("CinemaID không được để trống khi cập nhật");
-      }
-
-      const response = currentCinema
-        ? await fetch(`http://localhost:5000/api/cinemas/${cinema.id}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              Name: cinema.name,
-              OpeningHours: cinema.openingHours,
-              ClosingHours: cinema.closingHours,
-              Location: cinema.location,
-              PhoneNumbers: cinema.phoneNumbers.filter((phone) => phone.trim()),
-            }),
-          })
-        : await fetch("http://localhost:5000/api/cinemas", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              CinemaID: cinema.id,
-              Name: cinema.name,
-              OpeningHours: cinema.openingHours,
-              ClosingHours: cinema.closingHours,
-              Location: cinema.location,
-              PhoneNumbers: cinema.phoneNumbers.filter((phone) => phone.trim()),
-            }),
-          });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(
-          errorData.message || "Không thể lưu thông tin rạp chiếu phim."
-        );
-      }
-
+      console.log("Dữ liệu gửi đi:", cinema);
+      await saveCinema(cinema, !!currentCinema);
       toast({
         title: currentCinema ? "Cập nhật thành công" : "Thêm thành công",
         description: `Rạp chiếu phim đã được ${
           currentCinema ? "cập nhật" : "thêm"
         }.`,
       });
-
       setIsDialogOpen(false);
       setCurrentCinema(null);
 
-      // Cập nhật danh sách rạp
-      const updatedCinemas = await fetch(
-        "http://localhost:5000/api/cinemas"
-      ).then((res) => res.json());
-      setCinemas(
-        updatedCinemas.data.map((cinema: any) => ({
-          id: cinema.CinemaID,
-          name: cinema.Name,
-          openingHours: cinema.OpeningHours,
-          closingHours: cinema.ClosingHours,
-          location: cinema.Location,
-          phoneNumbers: cinema.PhoneNumbers || [],
-        }))
-      );
-      setFilteredCinemas(
-        updatedCinemas.data.map((cinema: any) => ({
-          id: cinema.CinemaID,
-          name: cinema.Name,
-          openingHours: cinema.OpeningHours,
-          closingHours: cinema.ClosingHours,
-          location: cinema.Location,
-          phoneNumbers: cinema.PhoneNumbers || [],
-        }))
-      );
+      // Reload cinemas
+      const fetchedCinemas = await fetchCinemas();
+      setCinemas(fetchedCinemas);
+      setFilteredCinemas(fetchedCinemas);
     } catch (err) {
       console.error("Lỗi khi lưu Cinema:", err);
       toast({
@@ -174,27 +97,16 @@ const Cinemas = () => {
   const handleDeleteCinema = async (cinemaId: string) => {
     if (window.confirm("Bạn có chắc chắn muốn xóa rạp chiếu phim này?")) {
       try {
-        const response = await fetch(
-          `http://localhost:5000/api/cinemas/${cinemaId}`,
-          {
-            method: "DELETE",
-          }
-        );
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || "Không thể xóa rạp chiếu phim.");
-        }
-
+        await deleteCinema(cinemaId);
         toast({
           title: "Xóa thành công",
           description: "Rạp chiếu phim đã được xóa.",
         });
 
-        setCinemas((prev) => prev.filter((cinema) => cinema.id !== cinemaId));
-        setFilteredCinemas((prev) =>
-          prev.filter((cinema) => cinema.id !== cinemaId)
-        );
+        // Reload cinemas
+        const fetchedCinemas = await fetchCinemas();
+        setCinemas(fetchedCinemas);
+        setFilteredCinemas(fetchedCinemas);
       } catch (err) {
         console.error("Lỗi khi xóa Cinema:", err);
         toast({
@@ -267,7 +179,7 @@ const Cinemas = () => {
                         variant="outline"
                         size="sm"
                         onClick={() => {
-                          console.log("Chọn sửa Cinema:", cinema); // Log để debug
+                          console.log("Chọn sửa Cinema:", cinema);
                           setCurrentCinema(cinema);
                           setIsDialogOpen(true);
                         }}
@@ -294,7 +206,7 @@ const Cinemas = () => {
         open={isDialogOpen}
         onOpenChange={(open) => {
           setIsDialogOpen(open);
-          if (!open) setCurrentCinema(null); // Reset khi đóng dialog
+          if (!open) setCurrentCinema(null);
         }}
       >
         <DialogContent>
@@ -312,7 +224,7 @@ const Cinemas = () => {
               const cinema: Cinema = {
                 id: currentCinema
                   ? currentCinema.id
-                  : (formData.get("id") as string), // Giữ id khi cập nhật
+                  : (formData.get("id") as string),
                 name: formData.get("name") as string,
                 openingHours: formData.get("openingHours") as string,
                 closingHours: formData.get("closingHours") as string,
@@ -322,7 +234,7 @@ const Cinemas = () => {
                   .map((phone) => phone.trim())
                   .filter((phone) => phone),
               };
-              console.log("Cinema trước khi gửi:", cinema); // Log để debug
+              console.log("Cinema trước khi gửi:", cinema);
               handleSaveCinema(cinema);
             }}
           >
@@ -331,8 +243,8 @@ const Cinemas = () => {
                 name="id"
                 placeholder="ID (ví dụ: CIN001)"
                 defaultValue={currentCinema?.id || ""}
-                disabled={!!currentCinema} // Vô hiệu hóa khi cập nhật
-                required={!currentCinema} // Bắt buộc khi thêm mới
+                disabled={!!currentCinema}
+                required={!currentCinema}
               />
               <Input
                 name="name"

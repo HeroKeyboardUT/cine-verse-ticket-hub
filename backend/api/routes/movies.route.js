@@ -1,15 +1,24 @@
-import moviesController from '../controllers/movies.controller.js';
-import express from 'express';
+import moviesController from "../controllers/movies.controller.js";
+import express from "express";
 
-route = express.Router();
+const moviesRoute = express.Router();
 
+// GET API
+moviesRoute.get("/", moviesController.getAllMovies);
+moviesRoute.get("/now-showing", moviesController.getShowingList);
+moviesRoute.get("/:id/ratings", moviesController.getMovieRating);
 
-route.get('/now-showing', moviesController.getShowingList);
+moviesRoute.get("/:id/showtimes", moviesController.getMovieShowtimes);
+moviesRoute.get("/:id", moviesController.getMovieById);
 
-route.get('/:id/ratings', moviesController.getMovieRating);
-route.post('/:id/ratings', moviesController.postMovieRating);
+// Create API
+moviesRoute.post("/create", moviesController.createMovie);
+moviesRoute.post("/:id/ratings", moviesController.postMovieRating);
 
-route.get('/:id/showtimes', moviesController.getMovieShowtimes);
-route.get('/:id', moviesController.getMovieById);
+// PUT API
+moviesRoute.put("/update", moviesController.updateMovie);
 
-export default route;
+// DELETE API
+moviesRoute.delete("/:id", moviesController.deleteMovie);
+
+export default moviesRoute;

@@ -1,9 +1,19 @@
-import ordersController from '../controllers/orders.controller.js';
-import express from 'express';
+import ordersController from "../controllers/orders.controller.js";
+import express from "express";
 
-route = express.Router();
+const orderRoute = express.Router();
 
-route.post('/', ordersController.createOrder);
+// GET API
+orderRoute.get("/", ordersController.getAllOrders);
+orderRoute.get("/:id", ordersController.getOrderById);
 
+// Create API
+orderRoute.post("/", ordersController.createOrder);
+
+// PUT API
+orderRoute.put("/:id", ordersController.updateOrder);
+
+// DELETE API
+orderRoute.delete("/:id", ordersController.deleteOrder);
 
 export default route;

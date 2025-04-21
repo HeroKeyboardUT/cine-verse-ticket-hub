@@ -1,13 +1,5 @@
 import React, { useState, useEffect } from "react";
-import {
-  Calendar,
-  Search,
-  Filter,
-  ArrowUpDown,
-  Edit,
-  Trash2,
-  Plus,
-} from "lucide-react";
+import { Calendar, Search, Edit, Trash2, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -32,231 +24,74 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { format, parseISO } from "date-fns";
-
-interface Showtime {
-  id: string; // Composite key: RoomID|MovieID|StartTime
-  roomId: string;
-  movieId: string;
-  movieTitle: string;
-  startTime: string;
-  duration: number;
-  format: string;
-  subtitle: boolean;
-  dub: boolean;
-}
-
-interface Movie {
-  MovieID: string;
-  Title: string;
-  Duration: number;
-}
-
-interface Room {
-  RoomNumber: number;
-  CinemaID: string;
-  Name: string;
-}
-
-interface Cinema {
-  CinemaID: string;
-  Name: string;
-}
+import {
+  fetchShowtimes,
+  createShowtime,
+  updateShowtime,
+  deleteShowtime,
+  Showtime,
+} from "@/lib/data_showtimes";
 
 const ShowtimesPage = () => {
-  const [searchTerm, setSearchTerm] = useState("");
   const [showtimes, setShowtimes] = useState<Showtime[]>([]);
   const [filteredShowtimes, setFilteredShowtimes] = useState<Showtime[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [currentShowtime, setCurrentShowtime] = useState<Showtime | null>(null);
-  const [movies, setMovies] = useState<Movie[]>([]);
-  const [rooms, setRooms] = useState<Room[]>([]);
-  const [cinemas, setCinemas] = useState<Cinema[]>([]);
-  const [selectedCinema, setSelectedCinema] = useState<string | null>(null);
 
-  // Fetch all necessary data
   useEffect(() => {
-    const fetchData = async () => {
+    const loadShowtimes = async () => {
       try {
-        setLoading(true);
-
-        // Fetch cinemas for dropdown
-        const cinemasRes = await fetch("http://localhost:5000/api/cinemas");
-        if (!cinemasRes.ok) {
-          const errorData = await cinemasRes.json();
-          throw new Error(errorData.message || "Failed to fetch cinemas");
-        }
-        const cinemasData = await cinemasRes.json();
-
-        setCinemas(cinemasData.data);
-
-        // Fetch showtimes
-        const showtimesRes = await fetch("http://localhost:5000/api/showtimes");
-        if (!showtimesRes.ok) {
-          const errorData = await showtimesRes.json();
-          throw new Error(errorData.message || "Failed to fetch showtimes");
-        }
-        const showtimesData = await showtimesRes.json();
-
-        // Fetch movies for dropdown
-        const moviesRes = await fetch("http://localhost:5000/api/movies");
-        if (!moviesRes.ok) {
-          const errorData = await moviesRes.json();
-          throw new Error(errorData.message || "Failed to fetch movies");
-        }
-        const moviesData = await moviesRes.json();
-
-        setMovies(moviesData);
-
-        // Map showtimes data
-        const mappedShowtimes = showtimesData.map((st: any) => ({
-          id: `${st.RoomID}|${st.MovieID}|${st.StartTime}`,
-          roomId: st.RoomID,
-          movieId: st.MovieID,
-          movieTitle:
-            moviesData.find((m: Movie) => m.MovieID === st.MovieID)?.Title ||
-            st.MovieID,
-          startTime: st.StartTime,
-          duration: st.Duration,
-          format: st.Format,
-          subtitle: st.Subtitle,
-          dub: st.Dub,
-        }));
-
-        setShowtimes(mappedShowtimes);
-        setFilteredShowtimes(mappedShowtimes);
+        const fetchedShowtimes = await fetchShowtimes();
+        setShowtimes(fetchedShowtimes);
+        setFilteredShowtimes(fetchedShowtimes);
       } catch (err) {
-        console.error("Fetch error:", err);
-        setError(err instanceof Error ? err.message : "Unknown error");
-        toast({
-          title: "Error",
-          description:
-            err instanceof Error ? err.message : "Failed to load data",
-          variant: "destructive",
-        });
+        setError("Failed to load showtimes");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchData();
+    loadShowtimes();
   }, []);
 
-  // Fetch rooms when cinema changes
-  useEffect(() => {
-    if (!selectedCinema) {
-      setRooms([]);
-      return;
-    }
-
-    const fetchRooms = async () => {
-      try {
-        const roomsRes = await fetch(
-          `http://localhost:5000/api/rooms?cinemaId=${selectedCinema}`
-        );
-        if (!roomsRes.ok) {
-          const errorData = await roomsRes.json();
-          throw new Error(errorData.message || "Failed to fetch rooms");
-        }
-        const roomsData = await roomsRes.json();
-        setRooms(roomsData);
-      } catch (err) {
-        console.error("Fetch error:", err);
-        toast({
-          title: "Error",
-          description:
-            err instanceof Error ? err.message : "Failed to fetch rooms",
-          variant: "destructive",
-        });
-      }
-    };
-
-    fetchRooms();
-  }, [selectedCinema]);
-
-  // Filter showtimes based on search term
   useEffect(() => {
     const filtered = showtimes.filter(
       (st) =>
-        st.movieTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        st.roomId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        st.startTime.toLowerCase().includes(searchTerm.toLowerCase())
+        st.MovieID.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        st.CinemaID.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        st.StartTime.toLowerCase().includes(searchTerm.toLowerCase())
     );
     setFilteredShowtimes(filtered);
   }, [searchTerm, showtimes]);
 
-  const handleSaveShowtime = async (e: React.FormEvent) => {
-    e.preventDefault();
-
+  const handleSaveShowtime = async () => {
     if (!currentShowtime) return;
 
     try {
-      const payload = {
-        RoomID: currentShowtime.roomId,
-        MovieID: currentShowtime.movieId,
-        StartTime: currentShowtime.startTime,
-        Duration: currentShowtime.duration,
-        Format: currentShowtime.format,
-        Subtitle: currentShowtime.subtitle,
-        Dub: currentShowtime.dub,
-      };
-
-      const url = currentShowtime.id
-        ? `http://localhost:5000/api/showtimes/${encodeURIComponent(
-            currentShowtime.id
-          )}`
-        : "http://localhost:5000/api/showtimes";
-
-      const method = currentShowtime.id ? "PUT" : "POST";
-
-      const response = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to save showtime");
+      if (currentShowtime.ShowTimeID) {
+        await updateShowtime(currentShowtime.ShowTimeID, currentShowtime);
+        toast({
+          title: "Success",
+          description: "Showtime updated successfully",
+        });
+      } else {
+        await createShowtime(currentShowtime);
+        toast({
+          title: "Success",
+          description: "Showtime created successfully",
+        });
       }
 
-      toast({
-        title: "Success",
-        description: `Showtime ${
-          currentShowtime.id ? "updated" : "added"
-        } successfully`,
-      });
-
-      // Refresh data
-      const updatedRes = await fetch("http://localhost:5000/api/showtimes");
-      const updatedData = await updatedRes.json();
-      const updatedShowtimes = updatedData.map((st: any) => ({
-        id: `${st.RoomID}|${st.MovieID}|${st.StartTime}`,
-        roomId: st.RoomID,
-        movieId: st.MovieID,
-        movieTitle:
-          movies.find((m) => m.MovieID === st.MovieID)?.Title || st.MovieID,
-        startTime: st.StartTime,
-        duration: st.Duration,
-        format: st.Format,
-        subtitle: st.Subtitle,
-        dub: st.Dub,
-      }));
-
+      const updatedShowtimes = await fetchShowtimes();
       setShowtimes(updatedShowtimes);
+      setFilteredShowtimes(updatedShowtimes);
       setIsDialogOpen(false);
       setCurrentShowtime(null);
     } catch (err) {
-      console.error("Save error:", err);
       toast({
         title: "Error",
         description:
@@ -271,33 +106,13 @@ const ShowtimesPage = () => {
       return;
 
     try {
-      const [roomId, movieId, startTime] = id.split("|");
-      const response = await fetch(
-        `http://localhost:5000/api/showtimes/${encodeURIComponent(id)}`,
-        {
-          method: "DELETE",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            RoomID: roomId,
-            MovieID: movieId,
-            StartTime: startTime,
-          }),
-        }
-      );
+      await deleteShowtime(id);
+      toast({ title: "Success", description: "Showtime deleted successfully" });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to delete showtime");
-      }
-
-      toast({
-        title: "Success",
-        description: "Showtime deleted successfully",
-      });
-
-      setShowtimes((prev) => prev.filter((st) => st.id !== id));
+      const updatedShowtimes = await fetchShowtimes();
+      setShowtimes(updatedShowtimes);
+      setFilteredShowtimes(updatedShowtimes);
     } catch (err) {
-      console.error("Delete error:", err);
       toast({
         title: "Error",
         description:
@@ -341,15 +156,16 @@ const ShowtimesPage = () => {
               className="flex items-center"
               onClick={() => {
                 setCurrentShowtime({
-                  id: "",
-                  roomId: "",
-                  movieId: "",
-                  movieTitle: "",
-                  startTime: new Date().toISOString(),
-                  duration: 120,
-                  format: "",
-                  subtitle: false,
-                  dub: false,
+                  ShowTimeID: "",
+                  CinemaID: "",
+                  RoomNumber: 0,
+                  MovieID: "",
+                  StartTime: new Date().toISOString(),
+                  EndTime: "",
+                  Duration: 120,
+                  Format: "",
+                  Subtitle: true,
+                  Dub: false,
                 });
                 setIsDialogOpen(true);
               }}
@@ -363,31 +179,43 @@ const ShowtimesPage = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Movie</TableHead>
+                  <TableHead>Showtime ID</TableHead>
+                  <TableHead>Cinema</TableHead>
                   <TableHead>Room</TableHead>
-                  <TableHead>Date & Time</TableHead>
+                  <TableHead>Movie</TableHead>
+                  <TableHead>Start Time</TableHead>
+                  <TableHead>End Time</TableHead>
                   <TableHead>Duration</TableHead>
                   <TableHead>Format</TableHead>
+                  <TableHead>Subtitle</TableHead>
+                  <TableHead>Dub</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredShowtimes.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-6">
+                    <TableCell colSpan={11} className="text-center py-6">
                       No showtimes found
                     </TableCell>
                   </TableRow>
                 ) : (
                   filteredShowtimes.map((showtime) => (
-                    <TableRow key={showtime.id}>
-                      <TableCell>{showtime.movieTitle}</TableCell>
-                      <TableCell>{showtime.roomId}</TableCell>
+                    <TableRow key={showtime.ShowTimeID}>
+                      <TableCell>{showtime.ShowTimeID}</TableCell>
+                      <TableCell>{showtime.CinemaID}</TableCell>
+                      <TableCell>{showtime.RoomNumber}</TableCell>
+                      <TableCell>{showtime.MovieID}</TableCell>
                       <TableCell>
-                        {format(parseISO(showtime.startTime), "PPpp")}
+                        {format(parseISO(showtime.StartTime), "PPpp")}
                       </TableCell>
-                      <TableCell>{showtime.duration} mins</TableCell>
-                      <TableCell>{showtime.format}</TableCell>
+                      <TableCell>
+                        {format(parseISO(showtime.EndTime), "PPpp")}
+                      </TableCell>
+                      <TableCell>{showtime.Duration} mins</TableCell>
+                      <TableCell>{showtime.Format}</TableCell>
+                      <TableCell>{showtime.Subtitle ? "Yes" : "No"}</TableCell>
+                      <TableCell>{showtime.Dub ? "Yes" : "No"}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
                           <Button
@@ -403,7 +231,9 @@ const ShowtimesPage = () => {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => handleDeleteShowtime(showtime.id)}
+                            onClick={() =>
+                              handleDeleteShowtime(showtime.ShowTimeID)
+                            }
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -422,109 +252,55 @@ const ShowtimesPage = () => {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {currentShowtime?.id ? "Edit Showtime" : "Add Showtime"}
+              {currentShowtime?.ShowTimeID ? "Edit Showtime" : "Add Showtime"}
             </DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleSaveShowtime}>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleSaveShowtime();
+            }}
+          >
             <div className="space-y-4">
-              {/* Select Cinema */}
-              <Select
-                value={selectedCinema || ""}
-                onValueChange={(value) => {
-                  setSelectedCinema(value);
+              <Input
+                placeholder="Cinema ID"
+                value={currentShowtime?.CinemaID || ""}
+                onChange={(e) =>
                   setCurrentShowtime((prev) =>
-                    prev
-                      ? {
-                          ...prev,
-                          roomId: "", // Reset room when cinema changes
-                        }
-                      : null
-                  );
-                }}
+                    prev ? { ...prev, CinemaID: e.target.value } : null
+                  )
+                }
                 required
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select Cinema" />
-                </SelectTrigger>
-                <SelectContent>
-                  {cinemas.map((cinema) => (
-                    <SelectItem key={cinema.CinemaID} value={cinema.CinemaID}>
-                      {cinema.Name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              {/* Select Room */}
-              <Select
-                value={currentShowtime?.roomId || ""}
-                onValueChange={(value) =>
+              />
+              <Input
+                type="number"
+                placeholder="Room Number"
+                value={currentShowtime?.RoomNumber || ""}
+                onChange={(e) =>
                   setCurrentShowtime((prev) =>
                     prev
-                      ? {
-                          ...prev,
-                          roomId: value,
-                        }
+                      ? { ...prev, RoomNumber: parseInt(e.target.value) }
                       : null
                   )
                 }
                 required
-                disabled={!selectedCinema}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select Room" />
-                </SelectTrigger>
-                <SelectContent>
-                  {rooms.map((room) => (
-                    <SelectItem
-                      key={room.RoomNumber}
-                      value={room.RoomNumber.toString()}
-                    >
-                      {room.Name} (Room {room.RoomNumber})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              {/* ...existing fields for movie, start time, duration, etc... */}
-              <Select
-                value={currentShowtime?.movieId || ""}
-                onValueChange={(value) => {
-                  const selectedMovie = movies.find(
-                    (movie) => movie.MovieID === value
-                  );
+              />
+              <Input
+                placeholder="Movie ID"
+                value={currentShowtime?.MovieID || ""}
+                onChange={(e) =>
                   setCurrentShowtime((prev) =>
-                    prev
-                      ? {
-                          ...prev,
-                          movieId: value,
-                          duration: selectedMovie
-                            ? selectedMovie.Duration
-                            : prev.duration,
-                        }
-                      : null
-                  );
-                }}
+                    prev ? { ...prev, MovieID: e.target.value } : null
+                  )
+                }
                 required
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select Movie" />
-                </SelectTrigger>
-                <SelectContent>
-                  {movies.map((movie) => (
-                    <SelectItem key={movie.MovieID} value={movie.MovieID}>
-                      {movie.Title}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
+              />
               <Input
                 type="datetime-local"
                 value={
-                  currentShowtime?.startTime
+                  currentShowtime?.StartTime
                     ? format(
-                        parseISO(currentShowtime.startTime),
+                        parseISO(currentShowtime.StartTime),
                         "yyyy-MM-dd'T'HH:mm"
                       )
                     : ""
@@ -534,60 +310,44 @@ const ShowtimesPage = () => {
                     prev
                       ? {
                           ...prev,
-                          startTime: new Date(e.target.value).toISOString(),
+                          StartTime: new Date(e.target.value).toISOString(),
                         }
                       : null
                   )
                 }
                 required
               />
-
               <Input
                 type="number"
                 placeholder="Duration (minutes)"
-                value={currentShowtime?.duration || ""}
+                value={currentShowtime?.Duration || ""}
                 onChange={(e) =>
                   setCurrentShowtime((prev) =>
                     prev
-                      ? {
-                          ...prev,
-                          duration: parseInt(e.target.value),
-                        }
+                      ? { ...prev, Duration: parseInt(e.target.value) }
                       : null
                   )
                 }
                 required
               />
-
               <Input
                 placeholder="Format (e.g., 2D, 3D, IMAX)"
-                value={currentShowtime?.format || ""}
+                value={currentShowtime?.Format || ""}
                 onChange={(e) =>
                   setCurrentShowtime((prev) =>
-                    prev
-                      ? {
-                          ...prev,
-                          format: e.target.value,
-                        }
-                      : null
+                    prev ? { ...prev, Format: e.target.value } : null
                   )
                 }
                 required
               />
-
               <div className="flex items-center space-x-4">
                 <label className="flex items-center">
                   <input
                     type="checkbox"
-                    checked={currentShowtime?.subtitle || false}
+                    checked={currentShowtime?.Subtitle || false}
                     onChange={(e) =>
                       setCurrentShowtime((prev) =>
-                        prev
-                          ? {
-                              ...prev,
-                              subtitle: e.target.checked,
-                            }
-                          : null
+                        prev ? { ...prev, Subtitle: e.target.checked } : null
                       )
                     }
                     className="mr-2"
@@ -597,15 +357,10 @@ const ShowtimesPage = () => {
                 <label className="flex items-center">
                   <input
                     type="checkbox"
-                    checked={currentShowtime?.dub || false}
+                    checked={currentShowtime?.Dub || false}
                     onChange={(e) =>
                       setCurrentShowtime((prev) =>
-                        prev
-                          ? {
-                              ...prev,
-                              dub: e.target.checked,
-                            }
-                          : null
+                        prev ? { ...prev, Dub: e.target.checked } : null
                       )
                     }
                     className="mr-2"

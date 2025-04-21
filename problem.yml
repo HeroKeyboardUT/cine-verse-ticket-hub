@@ -1,0 +1,4 @@
+Vấn đề:
+  - Director chỉ có được 1 người
+  - Tính năng insert của Customer đang cần prefix increment
+  - Tất cả tính năng cập nhật

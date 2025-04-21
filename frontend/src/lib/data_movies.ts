@@ -1,10 +1,16 @@
+// INTERFACE MOVIE FOR MOVIE
+// NOTE : GENRE IS FROM ANOTHER
+
+import API_MOVIES from "./API_lib/API_MOVIES.ts";
+import { formatDuration } from "../lib/utils.ts";
+import exp from "constants";
 export interface Movie {
   id: string;
   title: string;
   releaseDate: string;
-  duration: number;
+  duration?: number;
   language?: string;
-  description?: string;
+  description: string;
   posterUrl?: string;
   ageRating?: string;
   studio?: string;
@@ -13,15 +19,13 @@ export interface Movie {
   customerRating?: number;
   genre?: string[];
   backdropUrl?: string;
-  // showtimes: {
-  //   date: string;
-  //   times: string[];
-  // }[];
+  isShowing?: boolean;
 }
 
+// API
 export const fetchMovies = async (): Promise<Movie[]> => {
   try {
-    const response = await fetch("http://localhost:5000/api/movies");
+    const response = await fetch(API_MOVIES.GET_MOVIES);
     if (!response.ok) {
       throw new Error("Không thể lấy dữ liệu phim từ backend");
     }
@@ -33,21 +37,19 @@ export const fetchMovies = async (): Promise<Movie[]> => {
       title: movie.Title,
       description: movie.Description || "No description available",
       posterUrl: movie.PosterURL || "https://via.placeholder.com/300x450",
-      backdropUrl: "https://via.placeholder.com/1200x400", // Placeholder cho backdropUrl
+      backdropUrl:
+        "https://images.unsplash.com/photo-1462759353907-b2ea5ebd72e7?q=80&w=2831&auto=format&fit=crop", // Placeholder cho backdropUrl
       rating: movie.CustomerRating || 0,
       duration: formatDuration(movie.Duration),
       genre: movie.Genres ? movie.Genres.split(",") : [],
       releaseDate: new Date(movie.ReleaseDate).toISOString().split("T")[0],
       trailerUrl: undefined,
-      showtimes: movie.Showtimes
-        ? movie.Showtimes.map((show: any) => ({
-            date: show.date,
-            times: show.times,
-          }))
-        : [],
+      ageRating: movie.AgeRating || "PG-13",
+      studio: movie.Studio || "Unknown Studio",
+      country: movie.Country || "Unknown Country",
+      director: movie.Director || "Unknown Director",
+      isShowing: movie.isShow || false,
     }));
-
-    // console.log("Mapped movies:", mappedMovies); // Log để kiểm tra
     return mappedMovies;
   } catch (error) {
     console.error("Lỗi khi gọi API:", error);
@@ -55,16 +57,43 @@ export const fetchMovies = async (): Promise<Movie[]> => {
   }
 };
 
-// Hàm chuyển đổi duration (phút sang định dạng "2h 15m")
-const formatDuration = (minutes: number): string => {
-  const hours = Math.floor(minutes / 60);
-  const remainingMinutes = minutes % 60;
-  return `${hours}h ${remainingMinutes}m`;
+// Lấy phim theo ID (GET /api/movies/:id)
+export const fetchMovieById = async (id: string): Promise<Movie> => {
+  try {
+    const response = await fetch(API_MOVIES.GET_MOVIE_BY_ID.replace(":id", id));
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Không thể lấy phim theo ID");
+    }
+    const data = await response.json();
+    const movie: Movie = {
+      id: data.MovieID,
+      title: data.Title,
+      releaseDate: new Date(data.ReleaseDate).toISOString().split("T")[0],
+      duration: formatDuration(data.Duration),
+      description: data.Description || "No description available",
+      posterUrl: data.PosterURL || "https://via.placeholder.com/300x450",
+      ageRating: data.AgeRating || "PG-13",
+      studio: data.Studio || "Unknown Studio",
+      country: data.Country || "Unknown Country",
+      director: data.Director || "Unknown Director",
+      customerRating: data.CustomerRating || 0,
+      genre: data.Genres ? data.Genres.split(",") : [],
+      backdropUrl:
+        "https://images.unsplash.com/photo-1462759353907-b2ea5ebd72e7?q=80&w=2831&auto=format&fit=crop", // Placeholder cho backdropUrl
+      isShowing: data.isShow || false,
+    };
+    return movie;
+  } catch (error) {
+    console.error("Lỗi khi gọi API:", error);
+    throw error;
+  }
 };
+
 // Tạo phim mới (POST /api/movies)
 export const createMovie = async (movie: Movie): Promise<Movie> => {
   try {
-    const response = await fetch("http://localhost:5000/api/movies", {
+    const response = await fetch(API_MOVIES.CREATE_MOVIE, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -81,8 +110,9 @@ export const createMovie = async (movie: Movie): Promise<Movie> => {
         Studio: movie.studio || null,
         Country: movie.country || null,
         Director: movie.director || null,
-        CustomerRating: movie.customerRating || 0,
+        customerRating: movie.customerRating || 0,
         Genres: movie.genre.join(","),
+        isShow: movie.isShowing || false,
       }),
     });
 
@@ -120,29 +150,26 @@ export const createMovie = async (movie: Movie): Promise<Movie> => {
 // Cập nhật phim (PUT /api/movies/:id)
 export const updateMovie = async (movie: Movie): Promise<Movie> => {
   try {
-    const response = await fetch(
-      `http://localhost:5000/api/movies/${movie.id}`,
-      {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          Title: movie.title,
-          ReleaseDate: movie.releaseDate,
-          Duration: movie.duration,
-          Language: movie.language || null,
-          Description: movie.description || null,
-          PosterURL: movie.posterUrl || null,
-          AgeRating: movie.ageRating || null,
-          Studio: movie.studio || null,
-          Country: movie.country || null,
-          Director: movie.director || null,
-          CustomerRating: movie.customerRating || 0,
-          Genres: movie.genre.join(","),
-        }),
-      }
-    );
+    const response = await fetch(``, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        Title: movie.title,
+        ReleaseDate: movie.releaseDate,
+        Duration: movie.duration,
+        Language: movie.language || null,
+        Description: movie.description || null,
+        PosterURL: movie.posterUrl || null,
+        AgeRating: movie.ageRating || null,
+        Studio: movie.studio || null,
+        Country: movie.country || null,
+        Director: movie.director || null,
+        CustomerRating: movie.customerRating || 0,
+        Genres: movie.genre.join(","),
+      }),
+    });
 
     if (!response.ok) {
       const errorData = await response.json();
@@ -194,6 +221,7 @@ export const deleteMovie = async (movieId: string): Promise<void> => {
     throw error;
   }
 };
+
 export const movies: Movie[] = [
   {
     id: "1",
@@ -331,48 +359,3 @@ export const movies: Movie[] = [
     ],
   },
 ];
-
-export interface Seat {
-  id: string;
-  row: string;
-  number: number;
-  status: "available" | "occupied" | "selected";
-  type: "standard" | "premium" | "vip";
-}
-
-export const generateSeats = (showtime: string): Seat[] => {
-  const rows = ["A", "B", "C", "D", "E", "F", "G", "H"];
-  const seatsPerRow = 12;
-  const seats: Seat[] = [];
-
-  rows.forEach((row) => {
-    for (let i = 1; i <= seatsPerRow; i++) {
-      // Generate random status for demo purposes
-      const random = Math.random();
-      let status: "available" | "occupied" | "selected" = "available";
-
-      if (random < 0.2) {
-        status = "occupied";
-      }
-
-      // Determine seat type
-      let type: "standard" | "premium" | "vip" = "standard";
-      if (row === "G" || row === "H") {
-        type = "premium";
-      }
-      if (row === "D" || row === "E") {
-        type = "vip";
-      }
-
-      seats.push({
-        id: `${row}${i}`,
-        row,
-        number: i,
-        status,
-        type,
-      });
-    }
-  });
-
-  return seats;
-};

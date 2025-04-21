@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
 import Hero from "@/components/Hero";
 import MovieGrid from "@/components/MovieGrid";
-import { fetchMovies } from "@/lib/data";
-import { Movie } from "@/lib/data";
+import { fetchMovies, Movie } from "@/lib/data_movies";
 
 const Index = () => {
   const [movies, setMovies] = useState<Movie[]>([]);

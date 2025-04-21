@@ -32,27 +32,6 @@ app.get("/", (req, res) => {
   res.send("Server đang chạy!");
 });
 
-// API endpoint lấy danh sách phim
-app.get("/api/movies", (req, res) => {
-  const query = `
-    SELECT 
-      m.*, 
-      GROUP_CONCAT(mg.Genre) AS Genres
-    FROM MOVIE m
-    LEFT JOIN MOVIE_GENRE mg ON m.MovieID = mg.MovieID
-    GROUP BY m.MovieID
-  `;
-  db.query(query, (err, results) => {
-    if (err) {
-      console.error("Lỗi khi lấy danh sách phim:", err);
-      return res
-        .status(500)
-        .json({ message: "Lỗi server", error: err.message });
-    }
-    res.json(results);
-  });
-});
-
 // API lấy danh sách Cinema kèm số điện thoại
 app.get("/api/cinemas", (req, res) => {
   const query = `
@@ -146,6 +125,27 @@ app.get("/api/cinemas/:id", (req, res) => {
         error: err.message,
       });
     });
+});
+
+// API endpoint lấy danh sách phim
+app.get("/api/movies", (req, res) => {
+  const query = `
+    SELECT 
+      m.*, 
+      GROUP_CONCAT(mg.Genre) AS Genres
+    FROM MOVIE m
+    LEFT JOIN MOVIE_GENRE mg ON m.MovieID = mg.MovieID
+    GROUP BY m.MovieID
+  `;
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error("Lỗi khi lấy danh sách phim:", err);
+      return res
+        .status(500)
+        .json({ message: "Lỗi server", error: err.message });
+    }
+    res.json(results);
+  });
 });
 
 // API endpoint lấy chi tiết phim theo ID
