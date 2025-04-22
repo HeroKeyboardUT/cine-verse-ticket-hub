@@ -2,7 +2,7 @@
 CREATE DATABASE IF NOT EXISTS CinemaSystem;
 USE CinemaSystem;
 
-DROP database cinemasystem;
+-- DROP database cinemasystem;
 CREATE TABLE CINEMA (
     CinemaID CHAR(6) PRIMARY KEY,
     Name VARCHAR(100) NOT NULL,
@@ -28,7 +28,8 @@ CREATE TABLE CUSTOMER (
     MembershipLevel VARCHAR(50) NOT NULL DEFAULT 'Standard',
     RegistrationDate DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     TotalSpent DECIMAL(10,2) NOT NULL DEFAULT 0 CHECK (TotalSpent >= 0),
-    TotalOrders INT NOT NULL DEFAULT 0 CHECK (TotalOrders >= 0)
+    TotalOrders INT NOT NULL DEFAULT 0 CHECK (TotalOrders >= 0),
+    Password VARCHAR(255) NOT NULL DEFAULT '123456789'
 );
 
 -- PREFIX INCREMENT
