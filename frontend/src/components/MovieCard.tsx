@@ -8,7 +8,7 @@ interface MovieCardProps {
     id: string;
     title: string;
     posterUrl: string;
-    rating: number;
+    customerRating: number;
     duration: string;
     genre: string[];
   };
@@ -26,7 +26,7 @@ const MovieCard = ({ movie }: MovieCardProps) => {
           />
           <div className="absolute top-2 right-2 bg-black/70 text-white text-xs py-1 px-2 rounded-md flex items-center">
             <Star className="h-3 w-3 text-yellow-400 mr-1" />
-            {movie.rating}
+            {movie.customerRating}
           </div>
         </div>
         <CardContent className="p-3">

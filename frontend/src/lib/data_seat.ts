@@ -1,3 +1,5 @@
+import API_SEAT from "@/lib/API_lib/API_SEAT";
+
 export interface Seat {
   id: string;
   row: string;
@@ -41,4 +43,23 @@ export const generateSeats = (showtime: string): Seat[] => {
   });
 
   return seats;
+};
+
+export const fetchSeatsByShowtime = async (
+  showtimeId: string
+): Promise<Seat[]> => {
+  const response = await fetch(
+    `${API_SEAT.GET_SEATS_BY_SHOWTIME}/${showtimeId}`
+  );
+  if (!response.ok) {
+    throw new Error("Failed to fetch seats for the showtime.");
+  }
+  const data = await response.json();
+  return data.map((seat: any) => ({
+    id: seat.SeatNumber,
+    row: seat.SeatNumber[0],
+    number: parseInt(seat.SeatNumber.slice(1)),
+    status: seat.IsOccupied ? "occupied" : "available",
+    type: seat.SeatType.toLowerCase() as "standard" | "premium" | "vip",
+  }));
 };

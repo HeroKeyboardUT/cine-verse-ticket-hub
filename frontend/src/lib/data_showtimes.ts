@@ -3,8 +3,11 @@ import API_SHOWTIME from "@/lib/API_lib/API_SHOWTIME";
 export interface Showtime {
   ShowTimeID: string;
   CinemaID: string;
+  CinemaName: string;
   RoomNumber: number;
+  RoomType: string;
   MovieID: string;
+  MovieTitle: string;
   StartTime: string;
   EndTime: string;
   Duration: number;
@@ -28,6 +31,35 @@ export const fetchShowtimeById = async (id: string): Promise<Showtime> => {
   const response = await fetch(url);
   if (!response.ok) {
     throw new Error("Failed to fetch showtime");
+  }
+  const data = await response.json();
+  const showtime: Showtime = {
+    ShowTimeID: data.ShowTimeID,
+    CinemaID: data.CinemaID,
+    CinemaName: data.CinemaName,
+    RoomNumber: data.RoomNumber,
+    RoomType: data.RoomType,
+    MovieID: data.MovieID,
+    MovieTitle: data.MovieTitle,
+    StartTime: data.StartTime,
+    EndTime: data.EndTime,
+    Duration: data.Duration,
+    Format: data.Format,
+    Subtitle: data.Subtitle,
+    Dub: data.Dub,
+  };
+  // console.log("Fetched showtime:", showtime);
+  return showtime;
+};
+
+// Fetch showtimes for a specific movie
+export const fetchShowtimeByMovieId = async (
+  movieId: string
+): Promise<Showtime[]> => {
+  const url = API_SHOWTIME.GET_SHOWTIME_BY_ID.replace(":id", movieId);
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error("Failed to fetch showtimes for the movie");
   }
   return response.json();
 };

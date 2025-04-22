@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
-import { movies } from "@/lib/data_movies";
-import { generateSeats, Seat } from "@/lib/data_seat";
+import { fetchSeatsByShowtime, Seat } from "@/lib/data_seat";
+import { fetchMovieById, Movie } from "@/lib/data_movies";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/components/ui/use-toast";
@@ -12,22 +12,35 @@ const SeatBooking = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const date = searchParams.get("date") || "";
-  const time = searchParams.get("time") || "";
-
-  const movie = movies.find((m) => m.id === movieId);
+  const showtimeId = searchParams.get("showtimeId") || "";
+  const [movie, setMovie] = useState<Movie | null>(null);
   const [seats, setSeats] = useState<Seat[]>([]);
   const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (time) {
-      setSeats(generateSeats(time));
-    }
-  }, [time]);
+    const fetchData = async () => {
+      try {
+        // setLoading(true);
+        const fetchedMovie = await fetchMovieById(movieId!);
+        // const fetchedSeats = await fetchSeatsByShowtime(showtimeId);
+        console.log(fetchedMovie);
+        // setMovie(fetchedMovie);
+        // setSeats(fetchedSeats);
+      } catch (err) {
+        setError("Failed to load movie or seat data.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [movieId, showtimeId]);
 
   const toggleSeatSelection = (
     seatId: string,
-    status: "available" | "occupied" | "selected"
+    status: "available" | "occupied"
   ) => {
     if (status === "occupied") return;
 
@@ -81,6 +94,20 @@ const SeatBooking = () => {
     }, 2000);
   };
 
+  if (loading)
+    return (
+      <div className="container mx-auto px-4 py-16 text-center">
+        <h1 className="text-3xl font-bold">Loading...</h1>
+      </div>
+    );
+
+  if (error)
+    return (
+      <div className="container mx-auto px-4 py-16 text-center">
+        <h1 className="text-3xl font-bold text-red-500">{error}</h1>
+      </div>
+    );
+
   if (!movie) {
     return (
       <div className="container mx-auto px-4 py-16 text-center">
@@ -98,9 +125,7 @@ const SeatBooking = () => {
           <div className="p-6 bg-black/20 rounded-lg mb-8">
             <div className="text-center mb-10">
               <h2 className="text-xl font-medium mb-1">{movie.title}</h2>
-              <p className="text-gray-400">
-                {date} - {time}
-              </p>
+              <p className="text-gray-400">{movie.releaseDate}</p>
             </div>
 
             <div className="w-full h-2 bg-primary/20 mb-12"></div>
@@ -167,9 +192,7 @@ const SeatBooking = () => {
                 className="w-full h-48 object-cover rounded-lg mb-4"
               />
               <h4 className="font-medium">{movie.title}</h4>
-              <p className="text-gray-400 text-sm">
-                {date} - {time}
-              </p>
+              <p className="text-gray-400 text-sm">{movie.releaseDate}</p>
             </div>
 
             <Separator className="my-4" />

@@ -44,11 +44,7 @@ class CustomerModel {
     `,
       [id]
     );
-    if (rows.length === 0) {
-      throw new Error(`Không tìm thấy khách hàng với ID ${id}`);
-    }
-    const customer = rows[0];
-    return {
+    return rows.map((customer) => ({
       ...customer,
       DateOfBirth: customer.DateOfBirth
         ? new Date(customer.DateOfBirth).toISOString()
@@ -56,39 +52,50 @@ class CustomerModel {
       RegistrationDate: customer.RegistrationDate
         ? new Date(customer.RegistrationDate).toISOString()
         : null,
-    };
+    }))[0];
   }
 
   async getCustomerOrders(id) {
     const [rows] = await pool.query(
       `
       SELECT 
-        OrderID, 
-        OrderDate, 
-        Status, 
-        TotalPrice, 
-        PaymentMethod, 
-        isTicket, 
-        isFood 
-      FROM \`ORDERS\`
-      WHERE CustomerID = ?
+        o.OrderID,
+        o.OrderDate,
+        o.Status,
+        o.TotalPrice,
+        o.PaymentMethod,
+        o.isTicket,
+        o.isFood,        
+        s.SeatNumber,
+        sh.StartTime,
+        sh.EndTime,
+        sh.Format,        
+        m.Title AS MovieTitle,
+        r.RoomNumber,
+        r.Type AS RoomType,
+        c.Name AS CinemaName,
+        c.Location AS CinemaLocation
+      FROM ORDERS o
+      LEFT JOIN SHOWTIME_SEAT s ON o.OrderID = s.OrderID
+      LEFT JOIN SHOWTIME sh ON s.ShowTimeID = sh.ShowTimeID
+      LEFT JOIN MOVIE m ON sh.MovieID = m.MovieID
+      LEFT JOIN ROOM r ON sh.CinemaID = r.CinemaID AND sh.RoomNumber = r.RoomNumber
+      LEFT JOIN CINEMA c ON r.CinemaID = c.CinemaID
+      WHERE o.CustomerID = ?
+      ORDER BY o.OrderDate DESC
     `,
       [id]
     );
-    return rows.map((order) => {
-      let orderTime = null;
-      if (order.Date && order.Time) {
-        const dateTimeString = `${order.Date} ${order.Time}`;
-        const parsedDate = new Date(dateTimeString);
-        if (!isNaN(parsedDate.getTime())) {
-          orderTime = parsedDate.toISOString();
-        }
-      }
-      return {
-        ...order,
-        orderTime,
-      };
-    });
+    return rows.map((order) => ({
+      ...order,
+      OrderDate: order.OrderDate
+        ? new Date(order.OrderDate).toISOString()
+        : null,
+      StartTime: order.StartTime
+        ? new Date(order.StartTime).toISOString()
+        : null,
+      EndTime: order.EndTime ? new Date(order.EndTime).toISOString() : null,
+    }));
   }
 
   async createCustomer(customer) {

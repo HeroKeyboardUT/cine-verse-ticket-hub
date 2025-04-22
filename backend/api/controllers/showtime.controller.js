@@ -14,14 +14,18 @@ class showtimeController {
 
   async getShowtimeById(req, res) {
     try {
-      const showtime = await showtimeModel.getShowtimeById(req.params.id);
-      if (!showtime)
-        return res.status(404).json({ message: "Showtime not found" });
-      res.status(200).json(showtime);
+      const movieId = req.params.id;
+      const showtimes = await showtimeModel.getShowtimeById(movieId);
+      if (!showtimes || showtimes.length === 0) {
+        return res
+          .status(404)
+          .json({ message: "No showtimes found for this movie" });
+      }
+      res.status(200).json(showtimes);
     } catch (error) {
       res
         .status(500)
-        .json({ message: "Error retrieving showtime", error: error.message });
+        .json({ message: "Error retrieving showtimes", error: error.message });
     }
   }
 

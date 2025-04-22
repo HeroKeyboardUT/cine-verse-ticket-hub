@@ -41,29 +41,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  fetchUsers,
+  createUser,
+  updateUser,
+  deleteUser,
+  fetchUserOrders,
+  User,
+} from "@/lib/data_user";
 
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-  dateOfBirth: string | null;
-  phoneNumber: string | null;
-  membershipLevel: string;
-  registrationDate: string | null;
-  totalSpent: number;
-  totalOrders: number;
-}
-
-interface Order {
-  orderId: string;
-  orderTime: string | null;
-  status: string;
-  totalPrice: number;
-  paymentMethod: string;
-  isTicket: boolean;
-  isFood: boolean;
-}
+import { Order } from "@/lib/data_order";
 
 const UsersPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -88,38 +75,17 @@ const UsersPage = () => {
 
   // Fetch users
   useEffect(() => {
-    const fetchUsers = async () => {
+    const loadUsers = async () => {
       try {
         setLoading(true);
-        const response = await fetch("http://localhost:5000/api/customers");
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(
-            errorData.message || "Không thể tải danh sách khách hàng"
-          );
-        }
-        const data = await response.json();
-        setUserList(
-          data.map((user: any) => ({
-            id: user.CustomerID,
-            name: user.FullName,
-            email: user.Email,
-            role: user.MembershipLevel === "VIP" ? "VIP" : "Customer",
-            dateOfBirth: user.DateOfBirth,
-            phoneNumber: user.PhoneNumber,
-            membershipLevel: user.MembershipLevel,
-            registrationDate: user.RegistrationDate,
-            totalSpent: parseFloat(user.TotalSpent) || 0,
-            totalOrders: parseInt(user.TotalOrders) || 0,
-          }))
-        );
+        const users = await fetchUsers();
+        setUserList(users);
       } catch (err) {
-        console.error("Lỗi khi tải khách hàng:", err);
-        setError(err instanceof Error ? err.message : "Lỗi không xác định");
+        setError(err instanceof Error ? err.message : "Failed to load users");
         toast({
-          title: "Lỗi",
+          title: "Error",
           description:
-            err instanceof Error ? err.message : "Không thể tải dữ liệu",
+            err instanceof Error ? err.message : "Failed to load data",
           variant: "destructive",
         });
       } finally {
@@ -127,7 +93,7 @@ const UsersPage = () => {
       }
     };
 
-    fetchUsers();
+    loadUsers();
   }, []);
 
   // Filter and sort users
@@ -174,41 +140,15 @@ const UsersPage = () => {
   const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await fetch("http://localhost:5000/api/customers", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          FullName: newUser.fullName,
-          Email: newUser.email,
-          DateOfBirth: newUser.dateOfBirth || null,
-          PhoneNumber: newUser.phoneNumber || null,
-          MembershipLevel: newUser.membershipLevel,
-        }),
+      await createUser({
+        fullName: newUser.fullName,
+        email: newUser.email,
+        dateOfBirth: newUser.dateOfBirth || null,
+        phoneNumber: newUser.phoneNumber || null,
+        membershipLevel: newUser.membershipLevel,
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Không thể thêm khách hàng");
-      }
-
-      const { customerId } = await response.json();
-      const fetchUsers = await fetch("http://localhost:5000/api/customers");
-      const data = await fetchUsers.json();
-      setUserList(
-        data.map((user: any) => ({
-          id: user.CustomerID,
-          name: user.FullName,
-          email: user.Email,
-          role: user.MembershipLevel === "VIP" ? "VIP" : "Customer",
-          dateOfBirth: user.DateOfBirth,
-          phoneNumber: user.PhoneNumber,
-          membershipLevel: user.MembershipLevel,
-          registrationDate: user.RegistrationDate,
-          totalSpent: parseFloat(user.TotalSpent) || 0,
-          totalOrders: parseInt(user.TotalOrders) || 0,
-        }))
-      );
-
+      const users = await fetchUsers();
+      setUserList(users);
       setShowAddDialog(false);
       setNewUser({
         fullName: "",
@@ -218,15 +158,13 @@ const UsersPage = () => {
         membershipLevel: "Standard",
       });
       toast({
-        title: "Thêm khách hàng thành công",
-        description: `Khách hàng #${customerId} đã được thêm.`,
+        title: "Success",
+        description: "User added successfully.",
       });
     } catch (err) {
-      console.error("Lỗi khi thêm khách hàng:", err);
       toast({
-        title: "Lỗi",
-        description:
-          err instanceof Error ? err.message : "Không thể thêm khách hàng",
+        title: "Error",
+        description: err instanceof Error ? err.message : "Failed to add user",
         variant: "destructive",
       });
     }
@@ -238,43 +176,15 @@ const UsersPage = () => {
     if (!selectedUser) return;
 
     try {
-      const response = await fetch(
-        `http://localhost:5000/api/customers/${selectedUser.id}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            FullName: newUser.fullName,
-            Email: newUser.email,
-            DateOfBirth: newUser.dateOfBirth || null,
-            PhoneNumber: newUser.phoneNumber || null,
-            MembershipLevel: newUser.membershipLevel,
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Không thể cập nhật khách hàng");
-      }
-
-      const fetchUsers = await fetch("http://localhost:5000/api/customers");
-      const data = await fetchUsers.json();
-      setUserList(
-        data.map((user: any) => ({
-          id: user.CustomerID,
-          name: user.FullName,
-          email: user.Email,
-          role: user.MembershipLevel === "VIP" ? "VIP" : "Customer",
-          dateOfBirth: user.DateOfBirth,
-          phoneNumber: user.PhoneNumber,
-          membershipLevel: user.MembershipLevel,
-          registrationDate: user.RegistrationDate,
-          totalSpent: parseFloat(user.TotalSpent) || 0,
-          totalOrders: parseInt(user.TotalOrders) || 0,
-        }))
-      );
-
+      await updateUser(selectedUser.id, {
+        fullName: newUser.fullName,
+        email: newUser.email,
+        dateOfBirth: newUser.dateOfBirth || null,
+        phoneNumber: newUser.phoneNumber || null,
+        membershipLevel: newUser.membershipLevel,
+      });
+      const users = await fetchUsers();
+      setUserList(users);
       setShowEditDialog(false);
       setNewUser({
         fullName: "",
@@ -285,15 +195,14 @@ const UsersPage = () => {
       });
       setSelectedUser(null);
       toast({
-        title: "Cập nhật khách hàng thành công",
-        description: `Khách hàng #${selectedUser.id} đã được cập nhật.`,
+        title: "Success",
+        description: "User updated successfully.",
       });
     } catch (err) {
-      console.error("Lỗi khi cập nhật khách hàng:", err);
       toast({
-        title: "Lỗi",
+        title: "Error",
         description:
-          err instanceof Error ? err.message : "Không thể cập nhật khách hàng",
+          err instanceof Error ? err.message : "Failed to update user",
         variant: "destructive",
       });
     }
@@ -301,32 +210,20 @@ const UsersPage = () => {
 
   // Handle delete user
   const handleDeleteUser = async (userId: string) => {
-    if (!confirm("Bạn có chắc chắn muốn xóa khách hàng này không?")) return;
+    if (!confirm("Are you sure you want to delete this user?")) return;
 
     try {
-      const response = await fetch(
-        `http://localhost:5000/api/customers/${userId}`,
-        {
-          method: "DELETE",
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Không thể xóa khách hàng");
-      }
-
+      await deleteUser(userId);
       setUserList(userList.filter((user) => user.id !== userId));
       toast({
-        title: "Xóa khách hàng thành công",
-        description: `Khách hàng #${userId} đã được xóa.`,
+        title: "Success",
+        description: "User deleted successfully.",
       });
     } catch (err) {
-      console.error("Lỗi khi xóa khách hàng:", err);
       toast({
-        title: "Lỗi",
+        title: "Error",
         description:
-          err instanceof Error ? err.message : "Không thể xóa khách hàng",
+          err instanceof Error ? err.message : "Failed to delete user",
         variant: "destructive",
       });
     }
@@ -335,35 +232,15 @@ const UsersPage = () => {
   // Handle view orders
   const handleViewOrders = async (user: User) => {
     try {
-      const response = await fetch(
-        `http://localhost:5000/api/customers/${user.id}/orders`
-      );
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(
-          errorData.message || "Không thể tải danh sách đơn hàng"
-        );
-      }
-      const data = await response.json();
-      setOrders(
-        data.map((order: any) => ({
-          orderId: order.OrderID,
-          orderTime: order.orderTime,
-          status: order.Status,
-          totalPrice: parseFloat(order.TotalPrice) || 0,
-          paymentMethod: order.PaymentMethod,
-          isTicket: order.isTicket,
-          isFood: order.isFood,
-        }))
-      );
+      const userOrders = await fetchUserOrders(user.id);
+      setOrders(userOrders);
       setSelectedUser(user);
       setShowOrdersDialog(true);
     } catch (err) {
-      console.error("Lỗi khi tải đơn hàng:", err);
       toast({
-        title: "Lỗi",
+        title: "Error",
         description:
-          err instanceof Error ? err.message : "Không thể tải đơn hàng",
+          err instanceof Error ? err.message : "Failed to load orders",
         variant: "destructive",
       });
     }
@@ -383,9 +260,7 @@ const UsersPage = () => {
   };
 
   if (loading)
-    return (
-      <div className="text-center py-8">Đang tải danh sách khách hàng...</div>
-    );
+    return <div className="text-center py-8">Loading user list...</div>;
   if (error)
     return <div className="text-center text-red-500 py-8">{error}</div>;
 

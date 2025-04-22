@@ -6,12 +6,32 @@ class showtimeModel {
     return rows;
   }
 
-  async getShowtimeById(id) {
+  async getShowtimeById(movieId) {
     const [rows] = await pool.query(
-      "SELECT * FROM SHOWTIME WHERE ShowtimeID = ?",
-      [id]
+      `
+      SELECT 
+        s.ShowTimeID,
+        s.CinemaID,
+        c.Name AS CinemaName,
+        s.RoomNumber,
+        r.Type AS RoomType,
+        s.MovieID,
+        m.Title AS MovieTitle,
+        s.StartTime,
+        s.EndTime,
+        s.Duration,
+        s.Format,
+        s.Subtitle,
+        s.Dub
+      FROM SHOWTIME s
+      JOIN CINEMA c ON s.CinemaID = c.CinemaID
+      JOIN ROOM r ON s.CinemaID = r.CinemaID AND s.RoomNumber = r.RoomNumber
+      JOIN MOVIE m ON s.MovieID = m.MovieID
+      WHERE s.MovieID = ?
+      `,
+      [movieId]
     );
-    return rows[0];
+    return rows;
   }
 
   async createShowtime(showtime) {

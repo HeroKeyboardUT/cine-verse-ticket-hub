@@ -39,7 +39,7 @@ export const fetchMovies = async (): Promise<Movie[]> => {
       posterUrl: movie.PosterURL || "https://via.placeholder.com/300x450",
       backdropUrl:
         "https://images.unsplash.com/photo-1462759353907-b2ea5ebd72e7?q=80&w=2831&auto=format&fit=crop", // Placeholder cho backdropUrl
-      rating: movie.CustomerRating || 0,
+      customerRating: movie.CustomerRating || 0,
       duration: formatDuration(movie.Duration),
       genre: movie.Genres ? movie.Genres.split(",") : [],
       releaseDate: new Date(movie.ReleaseDate).toISOString().split("T")[0],
