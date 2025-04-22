@@ -33,6 +33,19 @@ class MoviesController {
     }
   }
 
+  async getMovieShowtimes(req, res) {
+    try {
+      const showtimes = await MoviesModel.getMovieShowtime(req.params.id);
+      if (!showtimes)
+        return res.status(404).json({ message: "Showtimes not found" });
+      res.status(200).json(showtimes);
+    } catch (error) {
+      res
+        .status(500)
+        .json({ message: "Error retrieving showtimes", error: error.message });
+    }
+  }
+
   async createMovie(req, res) {
     try {
       await MoviesModel.createMovie(req.body);
@@ -57,7 +70,6 @@ class MoviesController {
 
   getMovieRating(req, res) {}
   postMovieRating(req, res) {}
-  getMovieShowtimes(req, res) {}
 
   async deleteMovie(req, res) {
     try {

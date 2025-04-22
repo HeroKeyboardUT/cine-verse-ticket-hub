@@ -25,33 +25,6 @@ export const fetchShowtimes = async (): Promise<Showtime[]> => {
   return response.json();
 };
 
-// Fetch a single showtime by ID
-export const fetchShowtimeById = async (id: string): Promise<Showtime> => {
-  const url = API_SHOWTIME.GET_SHOWTIME_BY_ID.replace(":id", id);
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error("Failed to fetch showtime");
-  }
-  const data = await response.json();
-  const showtime: Showtime = {
-    ShowTimeID: data.ShowTimeID,
-    CinemaID: data.CinemaID,
-    CinemaName: data.CinemaName,
-    RoomNumber: data.RoomNumber,
-    RoomType: data.RoomType,
-    MovieID: data.MovieID,
-    MovieTitle: data.MovieTitle,
-    StartTime: data.StartTime,
-    EndTime: data.EndTime,
-    Duration: data.Duration,
-    Format: data.Format,
-    Subtitle: data.Subtitle,
-    Dub: data.Dub,
-  };
-  // console.log("Fetched showtime:", showtime);
-  return showtime;
-};
-
 // Fetch showtimes for a specific movie
 export const fetchShowtimeByMovieId = async (
   movieId: string

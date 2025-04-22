@@ -29,6 +29,26 @@ class MoviesModel {
     return rows[0];
   }
 
+  async getMovieShowtime(id) {
+    const results = await pool.query(
+      `
+      SELECT
+        m.MovieID,
+        m.Title,
+        s.ShowTimeID,
+        s.StartTime,
+        s.EndTime,
+        s.CinemaID,
+        s.Duration
+      FROM MOVIE m
+      JOIN SHOWTIME s ON m.MovieID = s.MovieID
+      WHERE m.MovieID = ?
+    `,
+      [id]
+    );
+    return results[0];
+  }
+
   async createMovie(movie) {
     const {
       MovieID,

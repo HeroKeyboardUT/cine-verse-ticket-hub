@@ -319,7 +319,7 @@ const ShowtimeCard = ({ showtime }: { showtime: Showtime }) => {
             )}
           </div>
 
-          <Link to={`/book/${showtime.ShowTimeID}`} className="block mt-4">
+          <Link to={`${showtime.ShowTimeID}/book`} className="block mt-4">
             <Button variant="default" className="w-full">
               Book Now
             </Button>

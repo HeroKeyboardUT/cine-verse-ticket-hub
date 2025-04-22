@@ -26,12 +26,9 @@ class SeatController {
   }
 
   async getSeatByShowTimeId(req, res) {
-    const { showTimeId } = req.params;
+    const showTimeId = req.params.id;
     try {
       const seats = await SeatModel.getSeatByShowTimeId(showTimeId);
-      if (!seats) {
-        return res.status(404).json({ error: "Seats not found" });
-      }
       res.status(200).json(seats);
     } catch (error) {
       console.error("Error fetching seats:", error);
@@ -50,4 +47,4 @@ class SeatController {
   }
 }
 
-export default SeatController;
+export default new SeatController();

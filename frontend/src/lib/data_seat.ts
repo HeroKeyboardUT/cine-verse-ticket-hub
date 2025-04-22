@@ -1,11 +1,12 @@
 import API_SEAT from "@/lib/API_lib/API_SEAT";
 
 export interface Seat {
-  id: string;
-  row: string;
-  number: number;
-  status: "available" | "occupied" | "selected";
-  type: "standard" | "premium" | "vip";
+  SeatNumber: string;
+  roomID: number;
+  Price: number;
+  status: "available" | "occupied";
+  CinemaID: string;
+  SeatType: "standard" | "vip";
 }
 
 export const generateSeats = (showtime: string): Seat[] => {
@@ -55,11 +56,13 @@ export const fetchSeatsByShowtime = async (
     throw new Error("Failed to fetch seats for the showtime.");
   }
   const data = await response.json();
+  // console.log("Fetched seats data:", data); // Debugging line
   return data.map((seat: any) => ({
-    id: seat.SeatNumber,
-    row: seat.SeatNumber[0],
-    number: parseInt(seat.SeatNumber.slice(1)),
-    status: seat.IsOccupied ? "occupied" : "available",
-    type: seat.SeatType.toLowerCase() as "standard" | "premium" | "vip",
+    SeatNumber: seat.SeatNumber,
+    roomID: seat.roomID,
+    Price: seat.Price,
+    status: seat.status,
+    CinemaID: seat.CinemaID,
+    SeatType: seat.SeatType,
   }));
 };

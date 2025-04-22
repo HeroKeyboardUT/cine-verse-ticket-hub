@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -33,8 +32,8 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           {/* Public routes */}
-          <Route 
-            path="/" 
+          <Route
+            path="/"
             element={
               <div className="min-h-screen flex flex-col">
                 <Navbar />
@@ -43,10 +42,10 @@ const App = () => (
                 </div>
                 <Footer />
               </div>
-            } 
+            }
           />
-          <Route 
-            path="/movie/:movieId" 
+          <Route
+            path="/movie/:movieId"
             element={
               <div className="min-h-screen flex flex-col">
                 <Navbar />
@@ -55,10 +54,10 @@ const App = () => (
                 </div>
                 <Footer />
               </div>
-            } 
+            }
           />
-          <Route 
-            path="/movie/:movieId/book" 
+          <Route
+            path="/movie/:movieId/book"
             element={
               <div className="min-h-screen flex flex-col">
                 <Navbar />
@@ -67,10 +66,22 @@ const App = () => (
                 </div>
                 <Footer />
               </div>
-            } 
+            }
           />
-          <Route 
-            path="/movie/:movieId/watch" 
+          <Route
+            path="/movie/:movieId/:showtimesID/book"
+            element={
+              <div className="min-h-screen flex flex-col">
+                <Navbar />
+                <div className="flex-grow">
+                  <SeatBooking />
+                </div>
+                <Footer />
+              </div>
+            }
+          />
+          <Route
+            path="/movie/:movieId/watch"
             element={
               <div className="min-h-screen flex flex-col">
                 <Navbar />
@@ -79,13 +90,13 @@ const App = () => (
                 </div>
                 <Footer />
               </div>
-            } 
+            }
           />
-          
+
           {/* Authentication routes */}
           <Route path="/register" element={<Register />} />
           <Route path="/login" element={<Login />} />
-          
+
           {/* Admin routes */}
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin" element={<AdminLayout />}>
@@ -97,7 +108,7 @@ const App = () => (
             <Route path="reports" element={<Reports />} />
             <Route path="settings" element={<Settings />} />
           </Route>
-          
+
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
