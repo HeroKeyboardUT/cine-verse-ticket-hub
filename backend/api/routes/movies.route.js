@@ -4,7 +4,6 @@ import express from "express";
 const moviesRoute = express.Router();
 
 // GET API
-moviesRoute.get("/", moviesController.getAllMovies);
 moviesRoute.get("/now-showing", moviesController.getShowingList);
 moviesRoute.get("/:id/ratings", moviesController.getMovieRating);
 
@@ -20,5 +19,6 @@ moviesRoute.put("/update", moviesController.updateMovie);
 
 // DELETE API
 moviesRoute.delete("/:id", moviesController.deleteMovie);
+moviesRoute.get("/", moviesController.getAllMovies);
 
 export default moviesRoute;
