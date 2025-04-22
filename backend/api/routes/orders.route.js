@@ -1,4 +1,3 @@
-
 import ordersController from "../controllers/orders.controller.js";
 import express from "express";
 
@@ -17,4 +16,4 @@ orderRoute.put("/:id", ordersController.updateOrder);
 // DELETE API
 orderRoute.delete("/:id", ordersController.deleteOrder);
 
-export default orderRoute;
+export default route;
