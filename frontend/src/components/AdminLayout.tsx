@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Link, useNavigate, Outlet, useLocation } from "react-router-dom";
 import {
@@ -12,6 +13,8 @@ import {
   Settings,
   Building2,
   Database,
+  Utensils,
+  Seat,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
@@ -41,6 +44,9 @@ const AdminLayout = () => {
     { path: "/admin/cinemas", icon: Building2, label: "Cinemas" },
     { path: "/admin/users", icon: Users, label: "Users" },
     { path: "/admin/showtimes", icon: Calendar, label: "Showtimes" },
+    { path: "/admin/tickets", icon: Ticket, label: "Tickets" },
+    { path: "/admin/food-drinks", icon: Utensils, label: "Food & Drinks" },
+    { path: "/admin/seats", icon: Seat, label: "Seats" },
     { path: "/admin/reports", icon: BarChart3, label: "Reports" },
     { path: "/admin/settings", icon: Settings, label: "Settings" },
   ];

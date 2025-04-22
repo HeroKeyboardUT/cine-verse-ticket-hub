@@ -20,6 +20,8 @@ import Tickets from "./pages/admin/Tickets";
 import Showtimes from "./pages/admin/Showtimes";
 import Settings from "./pages/admin/Settings";
 import Cinemas from "./pages/admin/Cinemas";
+import FoodDrinks from "./pages/admin/FoodDrinks";
+import SeatManagement from "./pages/admin/SeatManagement";
 import Register from "./pages/Register";
 import Login from "./pages/Login";
 
@@ -94,6 +96,8 @@ const App = () => (
             <Route path="users" element={<Users />} />
             <Route path="tickets" element={<Tickets />} />
             <Route path="showtimes" element={<Showtimes />} />
+            <Route path="food-drinks" element={<FoodDrinks />} />
+            <Route path="seats" element={<SeatManagement />} />
             <Route path="reports" element={<Reports />} />
             <Route path="settings" element={<Settings />} />
           </Route>
