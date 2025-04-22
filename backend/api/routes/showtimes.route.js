@@ -4,16 +4,16 @@ import express from "express";
 const showtimeRoute = express.Router();
 
 // GET API
-showtimeRoute.get("/", showtimeController.getAllShowtimes);
 showtimeRoute.get("/:id", showtimeController.getShowtimeById);
 
 // Create API
-showtimeRoute.post("/", showtimeController.createShowtime);
 
 // PUT API
 showtimeRoute.put("/:id", showtimeController.updateShowtime);
 
 // DELETE API
 showtimeRoute.delete("/:id", showtimeController.deleteShowtime);
+showtimeRoute.post("/", showtimeController.createShowtime);
+showtimeRoute.get("/", showtimeController.getAllShowtimes);
 
 export default showtimeRoute;
