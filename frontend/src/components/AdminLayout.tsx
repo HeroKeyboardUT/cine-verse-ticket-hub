@@ -26,6 +26,7 @@ const AdminLayout = () => {
   const handleLogout = () => {
     // Remove user from local storage
     localStorage.removeItem("adminUser");
+    localStorage.removeItem("adminToken");
 
     toast({
       title: "Logged out",
