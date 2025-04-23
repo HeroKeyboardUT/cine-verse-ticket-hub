@@ -11,8 +11,9 @@ const AdminAuthGuard: React.FC<AdminAuthGuardProps> = ({ children }) => {
   const navigate = useNavigate();
   
   useEffect(() => {
-    const adminUser = localStorage.getItem('adminUser');
-    
+    const token = localStorage.getItem('token');
+    const user = localStorage.getItem('user');
+    const adminUser = user === 'admin';
     if (!adminUser) {
       toast({
         variant: "destructive",

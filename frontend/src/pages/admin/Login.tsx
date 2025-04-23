@@ -21,70 +21,45 @@ const AdminLogin = () => {
     setIsLoading(true);
     setError('');
     
-    try {
-      // Make API call to backend login endpoint
-      const response = await fetch(API_AUTH.LOGIN, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          Email: username, // Using Email as the key expected by backend
-          password
-        }),
-      });
-      
-      // Parse response data
-      const data = await response.json();
-      
-      // Handle non-2xx responses
-      if (!response.ok) {
-        throw new Error(data.message || 'Authentication failed');
+    fetch(API_AUTH.ADMIN_LOGIN, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ Username: username, Password: password }),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('Login failed');
+        }
+        return response.json();
       }
-      
-      // Extract token and user data
-      const { token, user } = data;
-      
-      if (!token) {
-        throw new Error('Authentication failed: No token received');
+      )
+      .then((responseData) => {
+        localStorage.setItem('token', responseData.token);
+        localStorage.setItem('user', 'admin');
+        toast({
+          title: 'Login successful',
+          description: 'Welcome back!',
+          duration: 2000,
+        });
+        navigate('/admin/movies');
       }
-      
-      // Store auth data in localStorage
-      localStorage.setItem('adminToken', token);
-      localStorage.setItem('adminUser', JSON.stringify({
-        id: user.id,
-        username: user.FullName,
-        email: user.Email,
-        role: 'admin' // Explicitly mark as admin
-      }));
-      
-      // Show success notification
-      toast({
-        title: "Login successful",
-        description: "Welcome to admin dashboard",
-      });
-      
-      // Redirect to admin dashboard
-      navigate('/admin/movies');
-    } catch (err) {
-      console.error('Login error:', err);
-      
-      // Set appropriate error message based on the error
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError('An unexpected error occurred');
+      )
+      .catch((error) => {
+        setError(error.message);
+        toast({
+          title: 'Login failed',
+          description: error.message,
+          variant: 'destructive',
+          duration: 2000,
+        });
       }
-      
-      // Show error notification
-      toast({
-        variant: "destructive",
-        title: "Login failed",
-        description: error || 'Authentication failed',
-      });
-    } finally {
-      setIsLoading(false);
-    }
+      )
+      .finally(() => {
+        setIsLoading(false);
+      }
+      );
   };
 
   return (
