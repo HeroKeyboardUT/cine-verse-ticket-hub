@@ -9,43 +9,6 @@ export interface Seat {
   SeatType: "standard" | "vip";
 }
 
-export const generateSeats = (showtime: string): Seat[] => {
-  const rows = ["A", "B", "C", "D", "E", "F", "G", "H"];
-  const seatsPerRow = 12;
-  const seats: Seat[] = [];
-
-  rows.forEach((row) => {
-    for (let i = 1; i <= seatsPerRow; i++) {
-      // Generate random status for demo purposes
-      const random = Math.random();
-      let status: "available" | "occupied" | "selected" = "available";
-
-      if (random < 0.2) {
-        status = "occupied";
-      }
-
-      // Determine seat type
-      let type: "standard" | "premium" | "vip" = "standard";
-      if (row === "G" || row === "H") {
-        type = "premium";
-      }
-      if (row === "D" || row === "E") {
-        type = "vip";
-      }
-
-      seats.push({
-        id: `${row}${i}`,
-        row,
-        number: i,
-        status,
-        type,
-      });
-    }
-  });
-
-  return seats;
-};
-
 export const fetchSeatsByShowtime = async (
   showtimeId: string
 ): Promise<Seat[]> => {
@@ -56,13 +19,14 @@ export const fetchSeatsByShowtime = async (
     throw new Error("Failed to fetch seats for the showtime.");
   }
   const data = await response.json();
-  // console.log("Fetched seats data:", data); // Debugging line
+
+  // Ensure Price is properly formatted as a number
   return data.map((seat: any) => ({
-    SeatNumber: seat.SeatNumber,
-    roomID: seat.roomID,
-    Price: seat.Price,
+    SeatNumber: seat.number,
+    roomID: seat.room,
+    Price: Number(seat.Price), // Ensure Price is a number, not a string
     status: seat.status,
-    CinemaID: seat.CinemaID,
-    SeatType: seat.SeatType,
+    CinemaID: seat.cinema,
+    SeatType: seat.SeatType?.toLowerCase() || "standard", // Normalize case
   }));
 };

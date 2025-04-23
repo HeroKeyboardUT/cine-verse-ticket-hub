@@ -1,46 +1,92 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useSearchParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { fetchSeatsByShowtime, Seat } from "@/lib/data_seat";
 import { fetchMovieById, Movie } from "@/lib/data_movies";
 import { fetchFoodItems, FoodItem } from "@/lib/data_food";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
+import { Voucher } from "@/lib/data_voucher";
+import { createTicketOrder } from "@/lib/data_order";
 import { useToast } from "@/components/ui/use-toast";
-import { set } from "date-fns";
+import { fetchShowtimeByMovieId, Showtime } from "@/lib/data_showtimes";
+import { format } from "date-fns";
+import { Film, Calendar, Clock, MapPin } from "lucide-react";
+import { SeatSelector } from "@/components/booking/SeatSelector";
+import { FoodSelector } from "@/components/booking/FoodSelector";
+import { VoucherSelector } from "@/components/booking/VoucherSelector";
+import { BookingSummary } from "@/components/booking/BookingSummary";
+import { CheckoutDialog } from "@/components/booking/CheckoutDialog";
 
 const SeatBooking = () => {
   const { movieId, showtimesID } = useParams<{
     movieId: string;
     showtimesID: string;
   }>();
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  // State for data
   const [movie, setMovie] = useState<Movie | null>(null);
   const [seats, setSeats] = useState<Seat[]>([]);
+  const [popcornItems, setPopcornItems] = useState<FoodItem[]>([]);
+  const [drinkItems, setDrinkItems] = useState<FoodItem[]>([]);
+  const [showtime, setShowtime] = useState<Showtime | null>(null);
+
+  // State for user selections
   const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
-  const [foodItems, setFoodItems] = useState<FoodItem[]>([]);
   const [selectedFood, setSelectedFood] = useState<{ [key: string]: number }>(
     {}
   );
-  const [voucher, setVoucher] = useState<string>("");
-  const [discount, setDiscount] = useState<number>(0);
+  const [selectedVoucher, setSelectedVoucher] = useState<Voucher | null>(null);
+
+  // UI state
   const [loading, setLoading] = useState(true);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<
+    "Credit Card" | "Cash" | "Mobile App"
+  >("Credit Card");
+
+  // Simulated logged-in user ID (in a real app, this would come from authentication)
+  const customerId = "CUS001";
 
   useEffect(() => {
     const fetchData = async () => {
       try {
+        setLoading(true);
+
+        // Fetch movie details
         const fetchedMovie = await fetchMovieById(movieId!);
-        const fetchedSeats = await fetchSeatsByShowtime(showtimesID!);
-        // console.log(fetchedSeats, "fetchedSeats");
-        // const fetchedFoodItems = await fetchFoodItems();
         setMovie(fetchedMovie);
+
+        // Fetch seats for the showtime
+        const fetchedSeats = await fetchSeatsByShowtime(showtimesID!);
         setSeats(fetchedSeats);
-        // setFoodItems(fetchedFoodItems);
+        console.log("Fetched seats:", fetchedSeats);
+        // Fetch showtime details
+        try {
+          const showtimes = await fetchShowtimeByMovieId(movieId!);
+          const currentShowtime = showtimes.find(
+            (st) => st.ShowTimeID === showtimesID
+          );
+          if (currentShowtime) {
+            setShowtime(currentShowtime);
+          }
+        } catch (showtimeError) {
+          console.error("Error fetching showtime:", showtimeError);
+        }
+
+        // Fetch food items
+        try {
+          const fetchedFoodItems = await fetchFoodItems();
+          setPopcornItems(fetchedFoodItems.popcorn);
+          setDrinkItems(fetchedFoodItems.drinks);
+        } catch (foodError) {
+          console.error("Error fetching food items:", foodError);
+          // Don't fail the whole page if just food items fail
+        }
       } catch (err) {
-        setError("Failed to load movie, seat, or food data.");
+        setError("Failed to load necessary data. Please try again.");
+        console.error("Error loading data:", err);
       } finally {
         setLoading(false);
       }
@@ -49,7 +95,8 @@ const SeatBooking = () => {
     fetchData();
   }, [movieId, showtimesID]);
 
-  const toggleSeatSelection = (
+  // Event handlers
+  const handleSeatToggle = (
     seatNumber: string,
     status: "available" | "occupied"
   ) => {
@@ -65,43 +112,61 @@ const SeatBooking = () => {
   };
 
   const handleFoodSelection = (itemId: string, quantity: number) => {
-    setSelectedFood((prev) => ({
-      ...prev,
-      [itemId]: (prev[itemId] || 0) + quantity,
-    }));
+    setSelectedFood((prev) => {
+      const newQuantity = (prev[itemId] || 0) + quantity;
+
+      // If quantity becomes 0 or negative, remove the item
+      if (newQuantity <= 0) {
+        const { [itemId]: _, ...rest } = prev;
+        return rest;
+      }
+
+      return {
+        ...prev,
+        [itemId]: newQuantity,
+      };
+    });
   };
 
-  const getTotalPrice = () => {
+  const handleVoucherSelect = (voucher: Voucher | null) => {
+    setSelectedVoucher(voucher);
+  };
+
+  const calculateTotalPrice = (): number => {
+    // Calculate seat total - Fix the accumulation of seat prices
     const seatTotal = selectedSeats.reduce((total, seatNumber) => {
       const seat = seats.find((s) => s.SeatNumber === seatNumber);
-      return total + (seat ? seat.Price : 0);
+      return total + (seat ? Number(seat.Price) : 0); // Ensure Price is treated as a number
     }, 0);
 
+    // Calculate food total
     const foodTotal = Object.entries(selectedFood).reduce(
       (total, [itemId, quantity]) => {
-        const food = foodItems.find((f) => f.id === itemId);
+        const food =
+          popcornItems.find((f) => f.id === itemId) ||
+          drinkItems.find((f) => f.id === itemId);
         return total + (food ? food.price * quantity : 0);
       },
       0
     );
 
-    return seatTotal + foodTotal - discount;
-  };
+    // Calculate voucher discount
+    const subtotal = seatTotal + foodTotal;
+    let discount = 0;
 
-  const applyVoucher = () => {
-    // Simulate voucher validation
-    if (voucher === "DISCOUNT10") {
-      setDiscount(10000);
-      toast({
-        title: "Voucher applied!",
-        description: "You saved 10,000 VND.",
-      });
-    } else {
-      toast({ title: "Invalid voucher", variant: "destructive" });
+    if (selectedVoucher) {
+      if (selectedVoucher.discountType === "Fixed") {
+        discount = selectedVoucher.discountAmount;
+      } else {
+        // Percentage discount
+        discount = (subtotal * selectedVoucher.discountAmount) / 100;
+      }
     }
+
+    return Math.max(0, subtotal - discount);
   };
 
-  const handleBooking = () => {
+  const openCheckoutDialog = () => {
     if (selectedSeats.length === 0) {
       toast({
         title: "No seats selected",
@@ -111,29 +176,72 @@ const SeatBooking = () => {
       return;
     }
 
-    toast({
-      title: "Booking successful!",
-      description: `You booked ${selectedSeats.length} seat(s) for ${movie?.title}.`,
-    });
-
-    setTimeout(() => {
-      navigate("/");
-    }, 2000);
+    setShowConfirmDialog(true);
   };
 
-  if (loading)
+  const handleBookingConfirm = async () => {
+    setIsProcessing(true);
+
+    try {
+      // Prepare the food items data
+      const foodItemsData = Object.entries(selectedFood)
+        .filter(([_, quantity]) => quantity > 0)
+        .map(([itemId, quantity]) => ({
+          itemId,
+          quantity,
+        }));
+
+      // Create the order
+      const orderData = {
+        customerId,
+        showtimeId: showtimesID!,
+        seatNumbers: selectedSeats,
+        foodItems: foodItemsData.length > 0 ? foodItemsData : undefined,
+        voucherId: selectedVoucher?.id,
+        paymentMethod,
+      };
+
+      const orderResponse = await createTicketOrder(orderData);
+
+      setShowConfirmDialog(false);
+
+      toast({
+        title: "Booking successful!",
+        description: `Your order #${orderResponse.orderId} has been created.`,
+      });
+
+      // Navigate to a confirmation page or back to homepage
+      setTimeout(() => {
+        navigate("/");
+      }, 2000);
+    } catch (error) {
+      console.error("Error creating order:", error);
+      toast({
+        title: "Booking failed",
+        description: "There was an error processing your booking.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // Loading and error states
+  if (loading) {
     return (
       <div className="container mx-auto px-4 py-16 text-center">
         <h1 className="text-3xl font-bold">Loading...</h1>
       </div>
     );
+  }
 
-  if (error)
+  if (error) {
     return (
       <div className="container mx-auto px-4 py-16 text-center">
         <h1 className="text-3xl font-bold text-red-500">{error}</h1>
       </div>
     );
+  }
 
   if (!movie) {
     return (
@@ -143,155 +251,115 @@ const SeatBooking = () => {
     );
   }
 
+  // Count total food items selected
+  const foodItemsCount = Object.entries(selectedFood).filter(
+    ([_, qty]) => qty > 0
+  ).length;
+
+  // Calculate total price
+  const totalPrice = calculateTotalPrice();
+
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-8 text-center">Book Tickets</h1>
 
-      <div className="flex flex-col md:flex-row gap-8">
-        <div className="w-full md:w-3/4">
-          <div className="p-6 bg-black/20 rounded-lg mb-8">
-            <div className="text-center mb-10">
-              <h2 className="text-xl font-medium mb-1">{movie.title}</h2>
-              <p className="text-gray-400">{movie.releaseDate}</p>
-            </div>
-
-            <div className="w-full h-2 bg-primary/20 mb-12"></div>
-
-            <p className="text-center text-sm mb-10">SCREEN</p>
-
-            <div className="grid grid-cols-12 gap-2 mb-8">
-              {seats.map((seat) => (
-                <button
-                  key={seat.SeatNumber}
-                  className={`aspect-square flex items-center justify-center text-xs rounded ${
-                    seat.status === "occupied"
-                      ? "bg-gray-700 text-gray-500 cursor-not-allowed"
-                      : selectedSeats.includes(seat.SeatNumber)
-                      ? "bg-primary text-white"
-                      : seat.SeatType === "vip"
-                      ? "bg-purple-900/30 seat"
-                      : "bg-gray-800/50 seat"
-                  }`}
-                  onClick={() =>
-                    toggleSeatSelection(seat.SeatNumber, seat.status)
-                  }
-                  disabled={seat.status === "occupied"}
-                >
-                  {seat.SeatNumber}
-                </button>
-              ))}
-            </div>
-
-            <div className="flex justify-center flex-wrap gap-x-8 gap-y-2 text-sm">
-              <div className="flex items-center">
-                <div className="w-4 h-4 bg-gray-800/50 rounded mr-2"></div>
-                <span>Standard</span>
-              </div>
-              <div className="flex items-center">
-                <div className="w-4 h-4 bg-purple-900/30 rounded mr-2"></div>
-                <span>VIP</span>
-              </div>
-              <div className="flex items-center">
-                <div className="w-4 h-4 bg-gray-700 rounded mr-2"></div>
-                <span>Occupied</span>
-              </div>
-              <div className="flex items-center">
-                <div className="w-4 h-4 bg-primary rounded mr-2"></div>
-                <span>Selected</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="p-6 bg-black/20 rounded-lg mb-8">
-            <h3 className="text-xl font-medium mb-4">Food & Drinks</h3>
-            <div className="grid grid-cols-2 gap-4">
-              {foodItems.map((food) => (
-                <div
-                  key={food.id}
-                  className="flex items-center justify-between"
-                >
-                  <span>{food.name}</span>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      size="sm"
-                      onClick={() => handleFoodSelection(food.id, -1)}
-                      disabled={!selectedFood[food.id]}
-                    >
-                      -
-                    </Button>
-                    <span>{selectedFood[food.id] || 0}</span>
-                    <Button
-                      size="sm"
-                      onClick={() => handleFoodSelection(food.id, 1)}
-                    >
-                      +
-                    </Button>
-                  </div>
+      {/* Showtime Information Card */}
+      {showtime && (
+        <div className="mb-8 p-4 bg-primary/5 rounded-lg border border-primary/10">
+          <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+            <div>
+              <h2 className="text-xl font-semibold mb-2">{movie?.title}</h2>
+              <div className="flex flex-wrap gap-4">
+                <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                  <Calendar className="h-4 w-4" />
+                  <span>
+                    {format(new Date(showtime.StartTime), "EEEE, MMMM d, yyyy")}
+                  </span>
                 </div>
-              ))}
+                <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                  <Clock className="h-4 w-4" />
+                  <span>
+                    {format(new Date(showtime.StartTime), "h:mm a")} -{" "}
+                    {format(new Date(showtime.EndTime), "h:mm a")}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                  <Film className="h-4 w-4" />
+                  <span>
+                    {showtime.Format}
+                    {showtime.Subtitle ? " (Subtitled)" : ""}
+                    {showtime.Dub ? " (Dubbed)" : ""}
+                  </span>
+                </div>
+              </div>
             </div>
-          </div>
-
-          <div className="p-6 bg-black/20 rounded-lg">
-            <h3 className="text-xl font-medium mb-4">Voucher</h3>
-            <div className="flex items-center gap-4">
-              <input
-                type="text"
-                value={voucher}
-                onChange={(e) => setVoucher(e.target.value)}
-                className="flex-1 p-2 rounded bg-gray-800 text-white"
-                placeholder="Enter voucher code"
-              />
-              <Button onClick={applyVoucher}>Apply</Button>
-            </div>
-          </div>
-        </div>
-
-        <div className="w-full md:w-1/4">
-          <div className="bg-black/20 rounded-lg p-6">
-            <h3 className="text-xl font-medium mb-4">Booking Summary</h3>
-
-            <div className="mb-6">
-              <img
-                src={movie.posterUrl}
-                alt={movie.title}
-                className="w-full h-48 object-cover rounded-lg mb-4"
-              />
-              <h4 className="font-medium">{movie.title}</h4>
-              <p className="text-gray-400 text-sm">{movie.releaseDate}</p>
-            </div>
-
-            <Separator className="my-4" />
-
-            <div className="mb-6">
-              <div className="flex justify-between mb-2">
-                <span>Selected Seats</span>
+            <div>
+              <div className="flex items-center gap-1 text-sm font-medium">
+                <MapPin className="h-4 w-4 text-primary" />
                 <span>
-                  {selectedSeats.length > 0 ? selectedSeats.join(", ") : "None"}
+                  {showtime.CinemaName} - Room {showtime.RoomNumber}
                 </span>
               </div>
-
-              <div className="flex justify-between mb-2">
-                <span>Discount</span>
-                <span>{discount.toLocaleString()} VND</span>
-              </div>
-
-              <div className="flex justify-between font-medium">
-                <span>Total Price</span>
-                <span>{getTotalPrice().toLocaleString()} VND</span>
-              </div>
             </div>
-
-            <Button
-              className="w-full"
-              onClick={handleBooking}
-              disabled={selectedSeats.length === 0}
-            >
-              Confirm Booking
-            </Button>
           </div>
         </div>
+      )}
+
+      <div className="flex flex-col md:flex-row gap-8">
+        {/* Left column: Seat selection, food, vouchers */}
+        <div className="w-full md:w-3/4 ">
+          {/* Seat selection component */}
+          <SeatSelector
+            movie={movie}
+            seats={seats}
+            selectedSeats={selectedSeats}
+            onSeatToggle={handleSeatToggle}
+          />
+
+          {/* Food selection component */}
+          <FoodSelector
+            popcornItems={popcornItems}
+            drinkItems={drinkItems}
+            selectedFood={selectedFood}
+            onFoodSelect={handleFoodSelection}
+          />
+
+          {/* Voucher selection component */}
+          <VoucherSelector
+            onSelectVoucher={handleVoucherSelect}
+            orderTotal={totalPrice}
+            selectedVoucher={selectedVoucher}
+          />
+        </div>
+
+        {/* Right column: Order summary */}
+        <div className="w-full md:w-1/4">
+          <BookingSummary
+            movie={movie}
+            selectedSeats={selectedSeats}
+            seats={seats}
+            selectedFood={selectedFood}
+            popcornItems={popcornItems}
+            drinkItems={drinkItems}
+            voucher={selectedVoucher}
+            onCheckout={openCheckoutDialog}
+          />
+        </div>
       </div>
+
+      {/* Checkout dialog */}
+      <CheckoutDialog
+        open={showConfirmDialog}
+        onOpenChange={setShowConfirmDialog}
+        movie={movie}
+        selectedSeats={selectedSeats}
+        foodItemsCount={foodItemsCount}
+        totalPrice={totalPrice}
+        paymentMethod={paymentMethod}
+        setPaymentMethod={setPaymentMethod}
+        isProcessing={isProcessing}
+        onConfirm={handleBookingConfirm}
+      />
     </div>
   );
 };

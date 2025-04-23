@@ -3,10 +3,10 @@ import cinemaRoute from "./cinema.route.js";
 import userRoute from "./user.route.js";
 import showtimeRoute from "./showtimes.route.js";
 import seatRoute from "./seat.route.js";
-// import orderRouter from "./orders.route.js";
-// import foodRouter from "./food.route.js";
+import orderRoute from "./orders.route.js";
+import FoodRoute from "./food.route.js";
 import authRouter from "./auth.route.js";
-// import voucherRouter from "./voucher.route.js";
+import voucherRoute from "./voucher.route.js";
 
 function routes(app) {
   // API Routes
@@ -18,10 +18,10 @@ function routes(app) {
   app.use("/api/customers", userRoute);
   app.use("/api/showtimes", showtimeRoute);
   app.use("/api/seats", seatRoute);
-  // app.use("/api/orders", orderRouter);
-  // app.use('/api/food', foodRouter);
-  app.use('/api/auth', authRouter);
-  // app.use('/api/voucher', voucherRouter);
+  app.use("/api/orders", orderRoute);
+  app.use("/api/foods", FoodRoute);
+  app.use("/api/auth", authRouter);
+  app.use("/api/voucher", voucherRoute);
 }
 
 export default routes;

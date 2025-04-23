@@ -1,12 +1,16 @@
-import foodController from '../controllers/food.controller.js';
-import express from 'express';
-import route from './auth.route.js';
+import FoodController from "../controllers/food.controller.js";
+import express from "express";
 
-route = express.Router();
+const FoodRoute = express.Router();
 
-route.get('/:foodId', foodController.getFoodById);
-route.put('/:foodId', foodController.updateFood);
-route.get('/', foodController.getList);
-route.post('/', foodController.createFood);
+// Routes for specific food types must come BEFORE the :id route
+FoodRoute.get("/popcorn", FoodController.getPopcornItems);
+FoodRoute.get("/drinks", FoodController.getDrinkItems);
 
-export default route;
+// Other generic routes
+FoodRoute.get("/", FoodController.getAllFood);
+FoodRoute.get("/:id", FoodController.getFoodById);
+FoodRoute.post("/", FoodController.createFood);
+FoodRoute.put("/:id", FoodController.updateFood);
+
+export default FoodRoute;

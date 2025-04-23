@@ -1018,6 +1018,14 @@ app.get("/api/customers/:id/orders", (req, res) => {
   });
 });
 
+// Import routes
+import voucherRoute from "./api/routes/voucher.route.js";
+import orderRoute from "./api/routes/orders.route.js";
+
+// Use routes
+app.use("/api/vouchers", voucherRoute);
+app.use("/api/orders", orderRoute);
+
 app.listen(PORT, () => {
   console.log(`Server đang chạy tại http://localhost:${PORT}`);
 });
