@@ -388,7 +388,14 @@ DELIMITER ;
 
 
 
-
+-- MANAGER
+CREATE TABLE MANAGER (
+    Username VARCHAR(255) PRIMARY KEY,
+    Password VARCHAR(255) NOT NULL
+);
+INSERT INTO MANAGER (Username, Password) VALUES
+('admin', 'admin123'),
+('Haodeptrai', 'Haodeptrai123')
 
 
 
@@ -782,10 +789,3 @@ SELECT
       ORDER BY o.OrderDate DESC;
 
 
-CREATE TABLE MANAGER (
-    Username VARCHAR(255) PRIMARY KEY,
-    Password VARCHAR(255) NOT NULL
-);
-INSERT INTO MANAGER (Username, Password) VALUES
-('admin', 'admin123'),
-('Haodeptrai', 'Haodeptrai123')
