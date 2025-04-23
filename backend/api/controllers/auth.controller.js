@@ -1,4 +1,5 @@
 import UserModel from "../models/user.model.js";
+import ManagerModel from "../models/manager.model.js";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import dotenv from "dotenv";
@@ -106,6 +107,29 @@ class AuthController {
             });
     }
 
+    adminLogin(req, res) {
+        const { Username, Password } = req.body;
+        ManagerModel.getMangerByUserName(Username)
+            .then((adminUser) => {
+                if (!adminUser) {
+                    return res.status(401).json({ message: "Invalid username or password" });
+                }
+                if (adminUser.Password !== Password) {
+                    return res.status(401).json({ message: "Invalid username or password" });
+                }
+                // Generate JWT token for admin
+                const token = jwt.sign({ id: adminUser.ManagerID }, JWT_SECRET, { expiresIn: TOKEN_EXPIRY });
+                // Return admin user data and token
+                res.json({
+                    message: "Admin login successful",
+                    token
+                });
+            })
+            .catch(error => {
+                console.error("Admin login error:", error);
+                res.status(500).json({ message: "Internal server error" });
+            });
+    }
     
     resetPassword(req, res) {
         const { Email, newPassword } = req.body;

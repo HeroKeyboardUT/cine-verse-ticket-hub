@@ -516,6 +516,7 @@ INSERT INTO CUSTOMER (FullName, Email, PhoneNumber, DateOfBirth, MembershipLevel
 ('Tran Van Yen', 'yen.tran@gmail.com', '0912345693', '1995-08-16', 'Standard', '2025-04-23 12:00:00', 0.00, 0),
 ('Le Thi Zung', 'zung.le@gmail.com', '0912345694', '1999-01-24', 'Premium', '2025-04-24 14:00:00', 0.00, 0);
 
+
 INSERT INTO MOVIE (MovieID, Title, ReleaseDate, Duration, Language, Description, PosterURL, AgeRating, Studio, Country, Director, CustomerRating, isShow) VALUES
 ('MOV001', 'Avengers: Endgame', '2019-04-26', 181, 'English', 'The epic conclusion to the Infinity Saga.', 'https://upload.wikimedia.org/wikipedia/vi/thumb/4/42/%C3%81p_ph%C3%ADch_phim_M%E1%BA%AFt_bi%E1%BA%BFc.jpg/330px-%C3%81p_ph%C3%ADch_phim_M%E1%BA%AFt_bi%E1%BA%BFc.jpg', 'PG-13', 'Marvel Studios', 'USA', 'Russo Brothers', 8.50, TRUE),
 ('MOV002', 'Dune: Part Two', '2024-03-01', 166, 'English', 'The saga continues on the desert planet.', 'https://poster2.com', 'PG-13', 'Warner Bros', 'USA', 'Denis Villeneuve', 9.00, TRUE),
@@ -781,4 +782,10 @@ SELECT
       ORDER BY o.OrderDate DESC;
 
 
-
+CREATE TABLE MANAGER (
+    Username VARCHAR(255) PRIMARY KEY,
+    Password VARCHAR(255) NOT NULL
+);
+INSERT INTO MANAGER (Username, Password) VALUES
+('admin', 'admin123'),
+('Haodeptrai', 'Haodeptrai123')
