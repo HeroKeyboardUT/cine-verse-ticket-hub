@@ -12,14 +12,14 @@ const TOKEN_EXPIRY = '2h';
 
 class AuthController {
     register(req, res) {
-        const { FullName, DateOfBirth, Email, PhoneNumber, MembershipLevel, password } = req.body;
+        const { FullName, DateOfBirth, Email, PhoneNumber, MembershipLevel, Password } = req.body;
         // Validate input data
-        if (!Email || !password || !FullName) {
+        if (!Email || !Password || !FullName) {
             return res.status(400).json({ message: "Required fields: FullName, Email, password" });
         }
         
         // Hash the password
-        const hashedPassword = bcrypt.hashSync(password, 10);
+        const hashedPassword = bcrypt.hashSync(Password, 10);
         
         // Save user to database using model
         UserModel.createCustomer({
@@ -65,9 +65,9 @@ class AuthController {
     }
     
     login(req, res) {
-        const { Email, password } = req.body;
+        const { Email, Password } = req.body;
         
-        if (!Email || !password) {
+        if (!Email || !Password) {
             return res.status(400).json({ message: "Email and password are required" });
         }
         
@@ -79,7 +79,7 @@ class AuthController {
                 }
                 
                 // Compare passwords
-                const isPasswordValid = bcrypt.compareSync(password, user.Password);
+                const isPasswordValid = bcrypt.compareSync(Password, user.Password);
                 
                 if (!isPasswordValid) {
                     return res.status(401).json({ message: "Invalid email or password" });
@@ -132,7 +132,7 @@ class AuthController {
     }
     
     verifyToken(req, res, next) {
-        const token = req.headers.authorization?.split(' ')[1];
+        // Check if token is provided in headers
         
         if (!token) {
             return res.status(401).json({ message: "No token provided" });
@@ -162,6 +162,22 @@ class AuthController {
             return res.status(401).json({ message: "Invalid or expired token" });
         }
     }
+    
+    // New endpoint to verify token for frontend
+    verify(req, res) {
+        // The token verification already happened in the verifyToken middleware
+        // We just need to return success if we reach this point
+        res.status(200).json({ 
+            verified: true, 
+            user: {
+                id: req.user.CustomerID,
+                name: req.user.FullName,
+                email: req.user.Email,
+                membershipLevel: req.user.MembershipLevel
+            } 
+        });
+    }
+
     verifyAdmin(req, res, next) {
         if (!req.user || req.user.MembershipLevel !== "Admin") {
             return res.status(403).json({ message: "Access denied" });

@@ -5,7 +5,7 @@ import showtimeRoute from "./showtimes.route.js";
 import seatRoute from "./seat.route.js";
 // import orderRouter from "./orders.route.js";
 // import foodRouter from "./food.route.js";
-// import authRouter from "./auth.route.js";
+import authRouter from "./auth.route.js";
 // import voucherRouter from "./voucher.route.js";
 
 function routes(app) {
@@ -20,7 +20,7 @@ function routes(app) {
   app.use("/api/seats", seatRoute);
   // app.use("/api/orders", orderRouter);
   // app.use('/api/food', foodRouter);
-  // app.use('/api/auth', authRouter);
+  app.use('/api/auth', authRouter);
   // app.use('/api/voucher', voucherRouter);
 }
 
