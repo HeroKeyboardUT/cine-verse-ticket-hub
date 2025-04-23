@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { toast } from '@/hooks/use-toast';
 import { Film, Mail, Lock } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
+import API_AUTH  from '@/lib/API_lib/API_AUTH';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -20,76 +21,44 @@ const Login = () => {
     e.preventDefault();
     setIsLoading(true);
 
-    try {
-      // Mô phỏng API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Kiểm tra admin
-      if (email === 'admin@example.com' && password === 'admin123') {
-        localStorage.setItem('adminUser', JSON.stringify({
-          id: 'admin-1',
-          email,
-          name: 'Admin User',
-          isAdmin: true
-        }));
-        
-        toast({
-          title: "Đăng nhập thành công",
-          description: "Chào mừng đến với trang quản trị!",
-        });
-        
-        navigate('/admin/movies');
-        return;
-      }
-      
-      // Kiểm tra user demo 
-      // Trong ứng dụng thực tế, bạn sẽ kiểm tra với dữ liệu từ backend
-      const users = JSON.parse(localStorage.getItem('users') || '[]');
-      const user = users.find((u: any) => u.email === email);
-      
-      if (user) {
-        if (password === user.password) {
-          localStorage.setItem('user', JSON.stringify({
-            id: user.id,
-            email: user.email,
-            name: user.name,
-            isAdmin: false
-          }));
-
-          toast({
-            title: "Đăng nhập thành công",
-            description: "Chào mừng bạn quay lại!",
-          });
-          
-          navigate('/');
-        } else {
-          throw new Error("Sai mật khẩu");
+    fetch(API_AUTH.LOGIN, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ Email: email, Password: password }),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('Đăng nhập không thành công');
         }
-      } else {
-        // Cho demo: tự động đăng nhập với bất kỳ email nào
-        localStorage.setItem('user', JSON.stringify({
-          id: `user-${Math.random().toString(36).substr(2, 9)}`,
-          email,
-          name: email.split('@')[0],
-          isAdmin: false
-        }));
-        
-        toast({
-          title: "Đăng nhập thành công",
-          description: "Chào mừng bạn quay lại!",
-        });
-        
-        navigate('/');
+        return response.json();
       }
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Đăng nhập thất bại",
-        description: "Email hoặc mật khẩu không chính xác. Vui lòng thử lại.",
-      });
-    } finally {
-      setIsLoading(false);
-    }
+      )
+      .then((responseData) => {
+        localStorage.setItem('token', responseData.token);
+        localStorage.setItem('user', JSON.stringify(responseData.user));
+        toast({
+          title: 'Đăng nhập thành công',
+          description: 'Chào mừng bạn trở lại!',
+          duration: 2000,
+        });
+      navigate('/');
+      }
+      )
+      .catch((error) => {
+        toast({
+          title: 'Đăng nhập thất bại',
+          description: error.message,
+          variant: 'destructive',
+          duration: 2000,
+        });
+      }
+      )
+      .finally(() => {
+        setIsLoading(false);
+      }
+      );
   };
 
   return (

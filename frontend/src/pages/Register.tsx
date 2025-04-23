@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { Checkbox } from '@/components/ui/checkbox';
-
+import API_AUTH from '@/lib/API_lib/API_AUTH';
 interface RegisterFormValues {
   fullName: string;
   email: string;
@@ -64,37 +64,50 @@ const Register = () => {
 
     setIsLoading(true);
 
-    try {
-      // Mô phỏng API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Lưu thông tin người dùng vào localStorage (chỉ cho mục đích demo)
-      localStorage.setItem('user', JSON.stringify({
-        id: `user-${Math.random().toString(36).substr(2, 9)}`,
-        fullName: data.fullName,
-        email: data.email,
-        phone: data.phone,
-        birthdate: data.birthdate,
-        isAdmin: false,
-        createdAt: new Date().toISOString()
-      }));
+    
+      // Gọi API đăng ký tài khoản
 
+    fetch(API_AUTH.REGISTER, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        FullName: data.fullName,
+        Email: data.email,
+        Password: data.password,
+        PhoneNumber: data.phone,
+        DateOfBirth: data.birthdate,
+      }),
+    })
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error('Đăng ký không thành công');
+      }
+      return response.json();
+    })
+    .then((responseData) => {
+      // Xử lý phản hồi từ API
+      localStorage.setItem('token', responseData.token);
+      localStorage.setItem('user', JSON.stringify(responseData.user));
       toast({
         title: "Đăng ký thành công",
         description: "Tài khoản của bạn đã được tạo thành công.",
       });
-
       navigate('/');
-    } catch (error) {
+    })
+    .catch((error) => {
       toast({
         variant: "destructive",
         title: "Đăng ký thất bại",
-        description: "Đã xảy ra lỗi khi tạo tài khoản của bạn.",
+        description: error.message,
       });
-    } finally {
+    })
+    .finally(() => {
       setIsLoading(false);
-    }
-  };
+    });
+  }
+
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 to-gray-800 p-4">

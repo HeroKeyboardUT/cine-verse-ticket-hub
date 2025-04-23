@@ -14,13 +14,19 @@ const Navbar = () => {
   useEffect(() => {
     // Kiểm tra xem người dùng đã đăng nhập chưa
     const user = localStorage.getItem('user');
-    if (user) {
+    const token = localStorage.getItem('token');
+    if (user && token) {
       setIsLoggedIn(true);
+    } else {
+      setIsLoggedIn(false);
     }
   }, []);
 
   const handleLogout = () => {
+    // Xóa thông tin người dùng và token khỏi localStorage
     localStorage.removeItem('user');
+    localStorage.removeItem('token');
+    // Cập nhật trạng thái đăng nhập
     setIsLoggedIn(false);
     navigate('/');
   };
