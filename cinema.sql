@@ -535,7 +535,7 @@ BEGIN
     -- Cursor lấy tất cả constraint
     DECLARE cur_constraints CURSOR FOR
       SELECT `Type`, `Below`, `Above`
-      FROM VOUCHER_CONSTRAIN
+      FROM VOUCHER_CONSTRAINT
       WHERE VoucherID = NEW.VoucherID;
 
     DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1;
@@ -1105,11 +1105,11 @@ INSERT INTO FOOD_AND_DRINK (Type, Name, StockQuantity, IsAvailable, Price) VALUE
 ('DRINK', 'Cola', 200, TRUE, 30000.00),
 ('DRINK', 'Pepsi', 150, TRUE, 30000.00);
 
-INSERT INTO FOOD_DRINK_ORDER (OrderID, ItemID, Quantity) VALUES
-('ORD002', 'FAD001', 2),
-('ORD003', 'FAD003', 1),
-('ORD007', 'FAD002', 1),
-('ORD012', 'FAD004', 2);
+-- INSERT INTO FOOD_DRINK_ORDER (OrderID, ItemID, Quantity) VALUES
+-- ('ORD002', 'FAD001', 2),
+-- ('ORD003', 'FAD003', 1),
+-- ('ORD007', 'FAD002', 1),
+-- ('ORD012', 'FAD004', 2);
 
 INSERT INTO POPCORN (ItemID, Flavor, Size) VALUES
 ('FAD001', 'Salted', 'Medium'),
@@ -1123,8 +1123,8 @@ INSERT INTO DRINK (ItemID, Size) VALUES
 
 
 
-SELECT * FROM SHOWTIME_SEAT;
-SELECT * FROM FOOD_AND_DRINK
+SELECT * FROM CUSTOMER;
+SELECT * FROM FOOD_AND_DRINK;
 
 
 -- ------------------------------------------------
