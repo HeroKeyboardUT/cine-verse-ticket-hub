@@ -1018,6 +1018,164 @@ app.get("/api/customers/:id/orders", (req, res) => {
   });
 });
 
+// API endpoint to create a ticket order
+app.post("/api/tickets", (req, res) => {
+  const {
+    customerId,
+    roomId,
+    movieId,
+    startTime,
+    seats,
+    totalPrice,
+    status,
+    paymentMethod,
+    foodItems,
+    voucherId,
+  } = req.body;
+
+  if (
+    !customerId ||
+    !movieId ||
+    !roomId ||
+    !seats ||
+    !seats.length ||
+    !paymentMethod
+  ) {
+    return res.status(400).json({ message: "Thiếu thông tin bắt buộc" });
+  }
+
+  // Create a new order
+  db.beginTransaction(async (err) => {
+    if (err) {
+      console.error("Lỗi khi bắt đầu transaction:", err);
+      return res
+        .status(500)
+        .json({ message: "Lỗi server", error: err.message });
+    }
+
+    try {
+      // 1. Create the order
+      const createOrderQuery = `
+        INSERT INTO \`ORDER\` (CustomerID, Date, Time, Status, TotalPrice, PaymentMethod, isTicket, isFood)
+        VALUES (?, CURDATE(), CURTIME(), ?, ?, ?, TRUE, ?)
+      `;
+
+      const hasFood = foodItems && foodItems.length > 0;
+
+      const orderResult = await new Promise((resolve, reject) => {
+        db.query(
+          createOrderQuery,
+          [customerId, status, totalPrice, paymentMethod, hasFood ? 1 : 0],
+          (err, result) => {
+            if (err) reject(err);
+            else resolve(result);
+          }
+        );
+      });
+
+      const orderId = orderResult.insertId;
+
+      // 2. Create SHOWTIME_SEAT entries for each selected seat
+      for (const seatNumber of seats) {
+        await new Promise((resolve, reject) => {
+          db.query(
+            `UPDATE SHOWTIME_SEAT 
+             SET OrderID = ?, Price = ?
+             WHERE ShowTimeID = ? AND RoomID = ? AND SeatNumber = ? AND OrderID IS NULL`,
+            [orderId, totalPrice / seats.length, roomId, movieId, seatNumber],
+            (err, result) => {
+              if (err) reject(err);
+              else {
+                if (result.affectedRows === 0) {
+                  reject(
+                    new Error(
+                      `Seat ${seatNumber} is already booked or does not exist`
+                    )
+                  );
+                } else {
+                  resolve(result);
+                }
+              }
+            }
+          );
+        });
+      }
+
+      // 3. If food items exist, add them to FOOD_DRINK_ORDER
+      if (hasFood) {
+        for (const item of foodItems) {
+          await new Promise((resolve, reject) => {
+            db.query(
+              `INSERT INTO FOOD_DRINK_ORDER (OrderID, ItemID, Quantity)
+               VALUES (?, ?, ?)`,
+              [orderId, item.itemId, item.quantity],
+              (err, result) => {
+                if (err) reject(err);
+                else resolve(result);
+              }
+            );
+          });
+        }
+      }
+
+      // 4. If voucher exists, link it to the order
+      if (voucherId) {
+        await new Promise((resolve, reject) => {
+          db.query(
+            `INSERT INTO VOUCHER_USAGE (VoucherID, OrderID, UsageDate)
+             VALUES (?, ?, NOW())`,
+            [voucherId, orderId],
+            (err, result) => {
+              if (err) reject(err);
+              else resolve(result);
+            }
+          );
+        });
+      }
+
+      // Commit the transaction
+      db.commit((err) => {
+        if (err) {
+          console.error("Lỗi khi commit transaction:", err);
+          db.rollback(() => {
+            res
+              .status(500)
+              .json({ message: "Lỗi khi lưu đơn hàng", error: err.message });
+          });
+          return;
+        }
+
+        res.status(201).json({
+          message: "Đặt vé thành công",
+          orderId: orderId.toString(),
+          orderDetails: {
+            movieId,
+            seats,
+            totalPrice,
+            paymentMethod,
+          },
+        });
+      });
+    } catch (error) {
+      console.error("Lỗi trong quá trình đặt vé:", error);
+      db.rollback(() => {
+        res.status(500).json({
+          message: "Lỗi khi đặt vé",
+          error: error.message,
+        });
+      });
+    }
+  });
+});
+
+// Import routes
+import voucherRoute from "./api/routes/voucher.route.js";
+import orderRoute from "./api/routes/orders.route.js";
+
+// Use routes
+app.use("/api/vouchers", voucherRoute);
+app.use("/api/orders", orderRoute);
+
 app.listen(PORT, () => {
   console.log(`Server đang chạy tại http://localhost:${PORT}`);
 });

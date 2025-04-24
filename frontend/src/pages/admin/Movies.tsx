@@ -51,6 +51,7 @@ const MovieList = () => {
       try {
         setIsLoading(true);
         const data = await fetchMovies();
+        console.log(data);
         setMoviesData(data);
         setFilteredMovies(data);
       } catch (err) {

@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Movie, createMovie, updateMovie } from "@/lib/data_movies";
 import { toast } from "@/hooks/use-toast";
+import { parseDuration } from "@/lib/utils";
 
 interface MovieDialogProps {
   isOpen: boolean;
@@ -55,6 +56,7 @@ const MovieDialog: React.FC<MovieDialogProps> = ({
   useEffect(() => {
     if (movie) {
       setFormData(movie);
+      // console.log(movie, "movieeeeee");
       setGenreInput(movie.genre.join(", "));
     } else {
       setFormData({
@@ -189,6 +191,8 @@ const MovieDialog: React.FC<MovieDialogProps> = ({
   const isReadOnly = mode === "view";
   const isEditMode = mode === "edit";
 
+  // console.log(formData.language);
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
@@ -303,7 +307,7 @@ const MovieDialog: React.FC<MovieDialogProps> = ({
                 name="duration"
                 type="number"
                 min="1"
-                value={formData.duration || ""}
+                value={parseDuration(formData.duration) || ""}
                 onChange={handleChange}
                 readOnly={isReadOnly}
                 className={errors.duration ? "border-red-500" : ""}
