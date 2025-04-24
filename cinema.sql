@@ -512,6 +512,75 @@ END//
 
 DELIMITER ;
 
+-- Phan function 
+DELIMITER //
+
+CREATE PROCEDURE GetCinemaStatistics(
+  OUT p_TotalRevenue DECIMAL(12,2),
+  OUT p_TotalTickets INT,
+  OUT p_TotalMovies INT
+)
+BEGIN
+  -- Tổng doanh thu
+  SELECT COALESCE(SUM(TotalPrice), 0)
+  INTO p_TotalRevenue
+  FROM ORDERS;
+
+  -- Tổng số vé bán
+  SELECT COUNT(*)
+  INTO p_TotalTickets
+  FROM SHOWTIME_SEAT;
+
+  -- Tổng số phim đang chiếu (có showtime trong tương lai hoặc isShow = true)
+  SELECT COUNT(DISTINCT m.MovieID)
+  INTO p_TotalMovies
+  FROM MOVIE m
+  JOIN SHOWTIME s ON m.MovieID = s.MovieID
+  WHERE s.StartTime >= CURRENT_DATE
+     OR m.isShow = TRUE;
+END;
+//
+
+-- Doanh thu theo tháng
+CREATE PROCEDURE RevenueByMonth()
+BEGIN
+  SELECT DATE_FORMAT(OrderDate, '%Y-%m') AS Month, SUM(TotalPrice) AS MonthlyRevenue
+  FROM ORDERS
+  GROUP BY Month
+  ORDER BY Month;
+END;//
+
+-- Doanh thu theo ngày
+CREATE PROCEDURE RevenueByDay()
+BEGIN
+  SELECT DATE(OrderDate) AS Date, SUM(TotalPrice) AS DailyRevenue
+  FROM ORDERS
+  GROUP BY Date
+  ORDER BY Date;
+END;//
+
+-- Doanh thu theo phim
+CREATE PROCEDURE RevenueByMovie()
+BEGIN
+  SELECT m.Title, SUM(s.Price) AS MovieRevenue
+  FROM SHOWTIME_SEAT s
+  JOIN SHOWTIME st ON s.CinemaID = st.CinemaID AND s.RoomNumber = st.RoomNumber AND s.StartTime = st.StartTime
+  JOIN MOVIE m ON st.MovieID = m.MovieID
+  GROUP BY m.Title
+  ORDER BY MovieRevenue DESC;
+END;//
+
+-- Top khách hàng chi tiêu nhiều nhất
+CREATE PROCEDURE TopCustomers(IN limit_count INT)
+BEGIN
+  SELECT CustomerID, FullName, TotalSpent, TotalOrders
+  FROM CUSTOMER
+  ORDER BY TotalSpent DESC
+  LIMIT limit_count;
+END;//
+
+DELIMITER ;
+
 
 -- INSERT --
 SET SQL_SAFE_UPDATES = 0;
