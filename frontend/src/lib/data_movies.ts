@@ -37,6 +37,7 @@ export const fetchMovies = async (): Promise<Movie[]> => {
       title: movie.Title,
       description: movie.Description || "No description available",
       posterUrl: movie.PosterURL || "https://via.placeholder.com/300x450",
+      language: movie.Language,
       backdropUrl:
         "https://images.unsplash.com/photo-1462759353907-b2ea5ebd72e7?q=80&w=2831&auto=format&fit=crop", // Placeholder cho backdropUrl
       customerRating: movie.CustomerRating || 0,
@@ -70,6 +71,7 @@ export const fetchMovieById = async (id: string): Promise<Movie> => {
       id: data.MovieID,
       title: data.Title,
       releaseDate: new Date(data.ReleaseDate).toISOString().split("T")[0],
+      language: data.Language,
       duration: formatDuration(data.Duration),
       description: data.Description || "No description available",
       posterUrl: data.PosterURL || "https://via.placeholder.com/300x450",
@@ -211,6 +213,8 @@ export const deleteMovie = async (movieId: string): Promise<void> => {
         method: "DELETE",
       }
     );
+
+    console.log(`http://localhost:5000/api/movies/${movieId}`);
 
     if (!response.ok) {
       const errorData = await response.json();

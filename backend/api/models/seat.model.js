@@ -23,7 +23,7 @@ class SeatModel {
       S.RoomNumber AS room,
       S.CinemaID AS cinema,
       S.SeatType,
-      IF(SS.SeatNumber IS NULL, 'available', 'occupied') AS status,
+      IF(SS.OrderID IS NULL, 'available', 'occupied') AS status,
       
       -- Tính giá dựa trên loại ghế và định dạng suất chiếu
       ROUND(

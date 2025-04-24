@@ -1,48 +1,55 @@
-import API_ORDER from "./API_lib/API_ORDER";
-import { FoodItem } from "./data_food";
+// API Urls
+import API_ORDER from "../lib/API_lib/API_ORDER";
 
-export interface Order {
-  orderId: string;
-  orderDate: string | null;
-  status: string;
-  totalPrice: number;
-  paymentMethod: string;
-  isTicket: boolean;
-  isFood: boolean;
+interface FoodItem {
+  itemId: string;
+  quantity: number;
 }
 
-export interface TicketOrderRequest {
+interface TicketOrderData {
   customerId: string;
   showtimeId: string;
+  movieId: string;
   seatNumbers: string[];
-  foodItems?: {
-    itemId: string;
-    quantity: number;
-  }[];
+  foodItems?: FoodItem[];
   voucherId?: string;
-  paymentMethod: "Credit Card" | "Cash" | "Mobile App";
+  paymentMethod: string;
+  totalPrice: number;
 }
 
-export interface OrderResponse {
+interface OrderResponse {
   orderId: string;
-  orderDate: string;
-  status: string;
-  totalPrice: number;
-  paymentMethod: string;
-  isTicket: boolean;
-  isFood: boolean;
+  message: string;
 }
 
 export const createTicketOrder = async (
-  orderData: TicketOrderRequest
+  data: TicketOrderData
 ): Promise<OrderResponse> => {
   try {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      throw new Error("Authentication required");
+    }
+
     const response = await fetch(API_ORDER.CREATE_TICKET_ORDER, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify(orderData),
+      body: JSON.stringify({
+        customerId: data.customerId,
+        roomId: data.showtimeId.split("-")[0], // Assuming the showtimeId contains roomId
+        movieId: data.movieId,
+        startTime: new Date().toISOString(), // You may need to get this from the showtime data
+        seats: data.seatNumbers,
+        totalPrice: data.totalPrice,
+        status: "Booked",
+        paymentMethod: data.paymentMethod,
+        foodItems: data.foodItems,
+        voucherId: data.voucherId,
+      }),
     });
 
     if (!response.ok) {
@@ -50,25 +57,10 @@ export const createTicketOrder = async (
       throw new Error(errorData.message || "Failed to create order");
     }
 
-    return await response.json();
+    const responseData = await response.json();
+    return responseData;
   } catch (error) {
     console.error("Error creating ticket order:", error);
-    throw error;
-  }
-};
-
-export const getOrderById = async (orderId: string): Promise<OrderResponse> => {
-  try {
-    const response = await fetch(`${API_ORDER.GET_ORDER_BY_ID}/${orderId}`);
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || "Failed to fetch order");
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error("Error fetching order:", error);
     throw error;
   }
 };

@@ -34,7 +34,7 @@ export const getVoucherByCode = async (
   }
 };
 
-export const getAllVouchers = async (): Promise<Voucher[]> => {
+export const fetchVouchers = async (): Promise<Voucher[]> => {
   try {
     const response = await fetch(API_VOUCHER.GET_ALL_VOUCHERS);
 
@@ -49,6 +49,9 @@ export const getAllVouchers = async (): Promise<Voucher[]> => {
     return [];
   }
 };
+
+// For backward compatibility
+export const getAllVouchers = fetchVouchers;
 
 const mapVoucherFromApi = (data: any): Voucher => ({
   id: data.VoucherID,

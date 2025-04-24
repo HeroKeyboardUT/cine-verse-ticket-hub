@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { fetchSeatsByShowtime, Seat } from "@/lib/data_seat";
 import { fetchMovieById, Movie } from "@/lib/data_movies";
 import { fetchFoodItems, FoodItem } from "@/lib/data_food";
-import { Voucher } from "@/lib/data_voucher";
+import { fetchVouchers, Voucher } from "@/lib/data_voucher";
 import { createTicketOrder } from "@/lib/data_order";
 import { useToast } from "@/components/ui/use-toast";
 import { fetchShowtimeByMovieId, Showtime } from "@/lib/data_showtimes";
@@ -29,6 +29,8 @@ const SeatBooking = () => {
   const [popcornItems, setPopcornItems] = useState<FoodItem[]>([]);
   const [drinkItems, setDrinkItems] = useState<FoodItem[]>([]);
   const [showtime, setShowtime] = useState<Showtime | null>(null);
+  const [vouchers, setVouchers] = useState<Voucher[]>([]);
+  const [vouchersLoading, setVouchersLoading] = useState(true);
 
   // State for user selections
   const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
@@ -46,8 +48,37 @@ const SeatBooking = () => {
     "Credit Card" | "Cash" | "Mobile App"
   >("Credit Card");
 
-  // Simulated logged-in user ID (in a real app, this would come from authentication)
-  const customerId = "CUS001";
+  // Get user from local storage
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    // Get user from localStorage
+    const storedUser = localStorage.getItem("user");
+    console.log("Stored user:", storedUser); // Debugging line
+    if (!storedUser) {
+      // Redirect to login if no user is found
+      toast({
+        title: "Authentication required",
+        description: "Please log in to book tickets",
+        variant: "destructive",
+      });
+      navigate("/login");
+      return;
+    }
+
+    try {
+      const parsedUser = JSON.parse(storedUser);
+      setUser(parsedUser);
+    } catch (error) {
+      console.error("Error parsing user data:", error);
+      toast({
+        title: "Authentication error",
+        description: "Please log in again",
+        variant: "destructive",
+      });
+      navigate("/login");
+    }
+  }, [navigate, toast]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -61,7 +92,7 @@ const SeatBooking = () => {
         // Fetch seats for the showtime
         const fetchedSeats = await fetchSeatsByShowtime(showtimesID!);
         setSeats(fetchedSeats);
-        console.log("Fetched seats:", fetchedSeats);
+
         // Fetch showtime details
         try {
           const showtimes = await fetchShowtimeByMovieId(movieId!);
@@ -83,6 +114,18 @@ const SeatBooking = () => {
         } catch (foodError) {
           console.error("Error fetching food items:", foodError);
           // Don't fail the whole page if just food items fail
+        }
+
+        // Fetch vouchers
+        try {
+          setVouchersLoading(true);
+          const fetchedVouchers = await fetchVouchers();
+          setVouchers(fetchedVouchers);
+        } catch (voucherError) {
+          console.error("Error fetching vouchers:", voucherError);
+          // Don't fail the whole page if just vouchers fail
+        } finally {
+          setVouchersLoading(false);
         }
       } catch (err) {
         setError("Failed to load necessary data. Please try again.");
@@ -183,6 +226,10 @@ const SeatBooking = () => {
     setIsProcessing(true);
 
     try {
+      if (!user || !user.CustomerID) {
+        throw new Error("User information not available");
+      }
+
       // Prepare the food items data
       const foodItemsData = Object.entries(selectedFood)
         .filter(([_, quantity]) => quantity > 0)
@@ -191,16 +238,26 @@ const SeatBooking = () => {
           quantity,
         }));
 
+      // Map payment method to appropriate value for backend
+      const mappedPaymentMethod =
+        paymentMethod === "Credit Card"
+          ? "Card"
+          : paymentMethod === "Mobile App"
+          ? "Online"
+          : "Cash";
+
       // Create the order
       const orderData = {
-        customerId,
+        customerId: user.CustomerID,
         showtimeId: showtimesID!,
+        movieId: movieId!,
         seatNumbers: selectedSeats,
         foodItems: foodItemsData.length > 0 ? foodItemsData : undefined,
         voucherId: selectedVoucher?.id,
-        paymentMethod,
+        paymentMethod: mappedPaymentMethod,
+        totalPrice: calculateTotalPrice(),
       };
-
+      console.log("Order data:", orderData); // Debugging line
       const orderResponse = await createTicketOrder(orderData);
 
       setShowConfirmDialog(false);
@@ -218,7 +275,10 @@ const SeatBooking = () => {
       console.error("Error creating order:", error);
       toast({
         title: "Booking failed",
-        description: "There was an error processing your booking.",
+        description:
+          error instanceof Error
+            ? error.message
+            : "There was an error processing your booking.",
         variant: "destructive",
       });
     } finally {
@@ -329,6 +389,8 @@ const SeatBooking = () => {
             onSelectVoucher={handleVoucherSelect}
             orderTotal={totalPrice}
             selectedVoucher={selectedVoucher}
+            vouchers={vouchers}
+            isLoading={vouchersLoading}
           />
         </div>
 
@@ -343,6 +405,9 @@ const SeatBooking = () => {
             drinkItems={drinkItems}
             voucher={selectedVoucher}
             onCheckout={openCheckoutDialog}
+            showtime={showtime}
+            totalPrice={totalPrice}
+            user={user}
           />
         </div>
       </div>
@@ -359,6 +424,13 @@ const SeatBooking = () => {
         setPaymentMethod={setPaymentMethod}
         isProcessing={isProcessing}
         onConfirm={handleBookingConfirm}
+        showtime={showtime}
+        selectedFood={selectedFood}
+        popcornItems={popcornItems}
+        drinkItems={drinkItems}
+        voucher={selectedVoucher}
+        seats={seats}
+        user={user}
       />
     </div>
   );
