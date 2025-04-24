@@ -35,6 +35,15 @@ class FoodModel {
     `);
     return rows;
   }
+  async getOtherItems() {
+    const [rows] = await pool.query(`
+      SELECT 
+        f.ItemID, f.Name, f.Price, f.StockQuantity, f.IsAvailable
+      FROM FOOD_AND_DRINK f
+      WHERE f.Type = 'OTHERS';
+    `);
+    return rows;
+  }
 }
 
 export default new FoodModel();
