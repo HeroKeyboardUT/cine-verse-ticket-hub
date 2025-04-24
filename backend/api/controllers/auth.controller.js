@@ -8,11 +8,11 @@ dotenv.config();
 
 // JWT Secret Key - Should be in .env file
 const JWT_SECRET = process.env.JWT_SECRET || "1234";
-// Token expiration time
-const TOKEN_EXPIRY = '2h';
+// // Token expiration time
+// const TOKEN_EXPIRY = '2h';
 
 class AuthController {
-    register(req, res) {
+    async register(req, res) {
         const { FullName, DateOfBirth, Email, PhoneNumber, MembershipLevel, Password } = req.body;
         // Validate input data
         if (!Email || !Password || !FullName) {
@@ -40,7 +40,7 @@ class AuthController {
                 }
                 
                 // Generate JWT token
-                const token = jwt.sign({ id: user.CustomerID }, JWT_SECRET, { expiresIn: TOKEN_EXPIRY });
+                const token = jwt.sign({ id: user.CustomerID }, JWT_SECRET);
                 res.status(201).json({ 
                     message: "User registered successfully", 
                     token,
@@ -65,7 +65,7 @@ class AuthController {
         });
     }
     
-    login(req, res) {
+    async login(req, res) {
         const { Email, Password } = req.body;
         
         if (!Email || !Password) {
@@ -87,7 +87,7 @@ class AuthController {
                 }
                 
                 // Generate JWT token
-                const token = jwt.sign({ id: user.CustomerID }, JWT_SECRET, { expiresIn: TOKEN_EXPIRY });
+                const token = jwt.sign({ id: user.CustomerID }, JWT_SECRET);
                 
                 // Return user data and token
                 res.json({
@@ -107,7 +107,7 @@ class AuthController {
             });
     }
 
-    adminLogin(req, res) {
+    async adminLogin(req, res) {
         const { Username, Password } = req.body;
         ManagerModel.getMangerByUserName(Username)
             .then((adminUser) => {
@@ -131,7 +131,7 @@ class AuthController {
             });
     }
     
-    resetPassword(req, res) {
+    async resetPassword(req, res) {
         const { Email, newPassword } = req.body;
         
         if (!Email || !newPassword) {
@@ -155,17 +155,17 @@ class AuthController {
             });
     }
     
-    verifyToken(req, res, next) {
+    async verifyToken(req, res, next) {
         // Check if token is provided in headers
-        
+        const token = req.headers["authorization"]?.split(' ')[1];
+
         if (!token) {
             return res.status(401).json({ message: "No token provided" });
         }
         
         try {
-            const decoded = jwt.verify(token, JWT_SECRET);
+            const decoded = await jwt.verify(token, JWT_SECRET)
             req.userId = decoded.id;
-            
             // Verify user exists (optional)
             UserModel.getCustomerAuthById(req.userId)
                 .then(user => {
@@ -174,7 +174,6 @@ class AuthController {
                     }
                     // Add user information to request
                     req.user = user;
-                    req.user.MembershipLevel = user.MembershipLevel || "Standard";
                     next();
                 })
                 .catch(error => {
@@ -187,26 +186,26 @@ class AuthController {
         }
     }
     
-    // New endpoint to verify token for frontend
-    verify(req, res) {
-        // The token verification already happened in the verifyToken middleware
-        // We just need to return success if we reach this point
-        res.status(200).json({ 
-            verified: true, 
-            user: {
-                id: req.user.CustomerID,
-                name: req.user.FullName,
-                email: req.user.Email,
-                membershipLevel: req.user.MembershipLevel
-            } 
-        });
-    }
 
-    verifyAdmin(req, res, next) {
+    async verifyAdmin(req, res, next) {
         if (!req.user || req.user.MembershipLevel !== "Admin") {
             return res.status(403).json({ message: "Access denied" });
         }
         next();
+    }
+    async verify(req, res) {
+        if (!req.user) {
+            return res.status(401).json({ message: "Unauthorized" });
+        }
+        res.status(200).json({
+            message: "User verified",
+            user: {
+                id: req.user.CustomerID,
+                FullName: req.user.FullName,
+                Email: req.user.Email,
+                MembershipLevel: req.user.MembershipLevel
+            }
+        });
     }
 }
 

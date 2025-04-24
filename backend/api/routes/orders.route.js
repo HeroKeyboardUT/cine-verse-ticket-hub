@@ -1,4 +1,5 @@
 import ordersController from "../controllers/orders.controller.js";
+import authController from "../controllers/auth.controller.js";
 import express from "express";
 
 const orderRoute = express.Router();
@@ -8,9 +9,7 @@ orderRoute.get("/", ordersController.getAllOrders);
 orderRoute.get("/:id", ordersController.getOrderById);
 
 // POST API
-orderRoute.post("/", ordersController.createOrder);
-orderRoute.post("/ticket", ordersController.createTicketOrder);
-
+orderRoute.post("/", authController.verifyToken, ordersController.createOrder);
 // PUT API
 orderRoute.put("/:id", ordersController.updateOrder);
 

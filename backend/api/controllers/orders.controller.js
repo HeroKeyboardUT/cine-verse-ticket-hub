@@ -1,3 +1,4 @@
+import ordersModel from "../models/orders.model.js";
 import OrdersModel from "../models/orders.model.js";
 import VoucherModel from "../models/voucher.model.js";
 
@@ -25,66 +26,52 @@ class OrdersController {
     }
   }
 
-  async createTicketOrder(req, res) {
-    try {
-      const {
-        customerId,
-        showtimeId,
-        seatNumbers,
-        foodItems,
-        voucherId,
-        paymentMethod,
-      } = req.body;
-
-      // Validate required fields
-      if (
-        !customerId ||
-        !showtimeId ||
-        !seatNumbers ||
-        seatNumbers.length === 0 ||
-        !paymentMethod
-      ) {
-        return res.status(400).json({ message: "Missing required fields" });
-      }
-
-      // Validate voucher if provided
-      let voucherData = null;
-      if (voucherId) {
-        voucherData = await VoucherModel.getVoucherById(voucherId);
-        if (!voucherData) {
-          return res.status(400).json({ message: "Invalid voucher" });
-        }
-
-        // Additional voucher validation can be done here
-      }
-
-      // Create the order
-      const order = await OrdersModel.createTicketOrder({
-        customerId,
-        showtimeId,
-        seatNumbers,
-        foodItems,
-        voucherId: voucherData?.VoucherID,
-        paymentMethod,
-      });
-
-      res.status(201).json(order);
-    } catch (error) {
-      console.error("Error creating ticket order:", error);
-      res
-        .status(500)
-        .json({ message: "Error creating order", error: error.message });
-    }
-  }
-
   async createOrder(req, res) {
+    const { showtimeId, movieId, seatNumbers, foodItems, voucherId, paymentMethod } = req.body;
+    const { CustomerID } = req.user;
+  
     try {
-      const newOrderId = await OrdersModel.createOrder(req.body);
-      res.status(201).json({ orderId: newOrderId });
+      // 1. Tạo đơn hàng chính
+      const order = await ordersModel.createOrder({
+        customerId: CustomerID,
+        paymentMethod,
+        voucherId,
+      });
+      const orderID = order.OrderID;
+      // 2. Thêm món ăn nếu có
+      if (Array.isArray(foodItems) && foodItems.length > 0) {
+        const foodPromises = foodItems.map(foodItem =>
+          ordersModel.createFoodOrder({
+            orderId: orderID,
+            foodId: foodItem.itemId,
+            quantity: foodItem.quantity,
+          })
+        );
+        await Promise.all(foodPromises);
+      }
+  
+      // 3. Thêm vé nếu có
+      if (Array.isArray(seatNumbers) && seatNumbers.length > 0) {
+        const ticketPromises = seatNumbers.map(seatNumber =>
+          ordersModel.createTicketOrder({
+            orderId: orderID,
+            showtimeId,
+            movieId,
+            seatNumber,
+          })
+        );
+        await Promise.all(ticketPromises);
+      }
+  
+      // 4. Trả về orderId nếu tất cả thành công
+      res.status(201).json({ orderId: orderID });
+  
     } catch (error) {
-      res
-        .status(500)
-        .json({ message: "Error creating order", error: error.message });
+      console.error("Error creating order:", error);
+      res.status(500).json({
+        message: "Failed to create full order",
+        error: error.message,
+      });
     }
   }
 
@@ -96,7 +83,7 @@ class OrdersController {
       res
         .status(500)
         .json({ message: "Error updating order", error: error.message });
-    }
+    } 
   }
 
   async deleteOrder(req, res) {

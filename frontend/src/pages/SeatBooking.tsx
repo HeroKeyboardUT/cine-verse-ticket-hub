@@ -53,13 +53,12 @@ const SeatBooking = () => {
 
   useEffect(() => {
     // Get user from localStorage
+    const storedToken = localStorage.getItem("token");
     const storedUser = localStorage.getItem("user");
-    console.log("Stored user:", storedUser); // Debugging line
-    if (!storedUser) {
-      // Redirect to login if no user is found
+    if (!storedToken || !storedUser) {
       toast({
-        title: "Authentication required",
-        description: "Please log in to book tickets",
+        title: "Authentication error",
+        description: "Please log in again",
         variant: "destructive",
       });
       navigate("/login");
@@ -224,11 +223,11 @@ const SeatBooking = () => {
 
   const handleBookingConfirm = async () => {
     setIsProcessing(true);
-
+    
     try {
-      if (!user || !user.CustomerID) {
-        throw new Error("User information not available");
-      }
+      // if (!user || !user.CustomerID) {
+      //   throw new Error("User information not available");
+      // }
 
       // Prepare the food items data
       const foodItemsData = Object.entries(selectedFood)

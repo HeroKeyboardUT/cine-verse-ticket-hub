@@ -7,5 +7,6 @@ route.post('/register', authController.register);
 route.post('/login', authController.login);
 route.post('/password/reset', authController.resetPassword);
 route.post('/adminlogin', authController.adminLogin);
+route.post('/verifyToken', authController.verifyToken, authController.verify);
 
 export default route;
