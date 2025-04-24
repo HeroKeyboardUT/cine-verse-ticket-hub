@@ -2,7 +2,7 @@
 CREATE DATABASE IF NOT EXISTS cinemasystem;
 USE cinemasystem;
 
-DROP database cinemasystem;
+
 CREATE TABLE CINEMA (
     CinemaID CHAR(6) PRIMARY KEY,
     Name VARCHAR(100) NOT NULL,
@@ -619,6 +619,63 @@ DELIMITER ;
 
 
 
+-- Procedure
+DELIMITER //
+
+CREATE PROCEDURE InsertFoodAndDrink(
+    IN p_type ENUM('POPCORN', 'DRINK', 'OTHERS'),
+    IN p_name VARCHAR(50),
+    IN p_stock_quantity INT,
+    IN p_is_available BOOLEAN,
+    IN p_price DECIMAL(10,2),
+    IN p_flavor VARCHAR(100),
+    IN p_size ENUM('Small', 'Medium', 'Large'),
+    OUT p_item_id CHAR(6)
+)
+BEGIN
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION 
+    BEGIN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Lỗi khi thêm mặt hàng. Vui lòng kiểm tra dữ liệu đầu vào.';
+    END;
+
+    IF p_type IS NULL OR p_name IS NULL OR p_stock_quantity < 0 OR p_price < 0 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Dữ liệu đầu vào không hợp lệ.';
+    END IF;
+
+    IF p_type = 'POPCORN' AND p_flavor IS NULL THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Hương vị là bắt buộc đối với bắp rang.';
+    END IF;
+
+    IF (p_type = 'POPCORN' OR p_type = 'DRINK') AND p_size IS NULL THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Kích thước là bắt buộc đối với bắp rang hoặc đồ uống.';
+    END IF;
+
+    START TRANSACTION;
+
+    INSERT INTO FOOD_AND_DRINK (Type, Name, StockQuantity, IsAvailable, Price)
+    VALUES (p_type, p_name, p_stock_quantity, p_is_available, p_price);
+
+    SELECT ItemID INTO p_item_id
+    FROM FOOD_AND_DRINK    WHERE ItemID = (SELECT CONCAT('FAD', LPAD(Counter, 3, '0')) 
+    FROM ID_COUNTER WHERE Prefix = 'FAD');
+
+    IF p_type = 'POPCORN' THEN
+        INSERT INTO POPCORN (ItemID, Flavor, Size)
+        VALUES (p_item_id, p_flavor, p_size);
+    ELSEIF p_type = 'DRINK' THEN
+        INSERT INTO DRINK (ItemID, Size)
+        VALUES (p_item_id, p_size);
+    END IF;
+
+    COMMIT;
+END //
+
+DELIMITER ;
+
 
 -- INSERT --
 SET SQL_SAFE_UPDATES = 0;
@@ -1099,32 +1156,17 @@ INSERT INTO MOVIE_GENRE (MovieID, Genre) VALUES
 ('MOV013', 'Biography'), ('MOV013', 'Drama'),
 ('MOV014', 'Animation'), ('MOV014', 'Adventure');
 
-INSERT INTO FOOD_AND_DRINK (Type, Name, StockQuantity, IsAvailable, Price) VALUES
-('POPCORN', 'Salted Popcorn', 100, TRUE, 50000.00),
-('POPCORN', 'Caramel Popcorn', 80, TRUE, 60000.00),
-('DRINK', 'Cola', 200, TRUE, 30000.00),
-('DRINK', 'Pepsi', 150, TRUE, 30000.00);
-
--- INSERT INTO FOOD_DRINK_ORDER (OrderID, ItemID, Quantity) VALUES
--- ('ORD002', 'FAD001', 2),
--- ('ORD003', 'FAD003', 1),
--- ('ORD007', 'FAD002', 1),
--- ('ORD012', 'FAD004', 2);
-
-INSERT INTO POPCORN (ItemID, Flavor, Size) VALUES
-('FAD001', 'Salted', 'Medium'),
-('FAD002', 'Caramel', 'Large');
-
-INSERT INTO DRINK (ItemID, Size) VALUES
-('FAD003', 'Medium'),
-('FAD004', 'Large');
-
-
-
-
-
-SELECT * FROM CUSTOMER;
-SELECT * FROM FOOD_AND_DRINK;
+-- Tạo dữ liệu mẫu cho FOOD_AND_DRINK
+-- Thêm Salted Popcorn
+CALL InsertFoodAndDrink('POPCORN', 'Salted Popcorn', 100, TRUE, 50000.00, 'Salted', 'Medium', @item_id1);
+-- Thêm Caramel Popcorn
+CALL InsertFoodAndDrink('POPCORN', 'Caramel Popcorn', 80, TRUE, 60000.00, 'Caramel', 'Large', @item_id2);
+-- Thêm Cola
+CALL InsertFoodAndDrink('DRINK', 'Cola', 200, TRUE, 30000.00, NULL, 'Medium', @item_id3);
+-- Thêm Pepsi
+CALL InsertFoodAndDrink('DRINK', 'Pepsi', 150, TRUE, 30000.00, NULL, 'Large', @item_id4);
+-- Thêm Hamburger
+CALL InsertFoodAndDrink('OTHERS', 'Hamburger', 50, TRUE, 70000.00, NULL, NULL, @item_id5);
 
 
 -- ------------------------------------------------
@@ -1149,73 +1191,4 @@ DELETE FROM CINEMA_PHONE;
 DELETE FROM CINEMA;
 DELETE FROM ID_COUNTER;
 -- ----------------------------------------------------- 
-
-
-
-SELECT 
-        o.OrderID,
-        o.OrderDate,
-        o.Status,
-        o.TotalPrice,
-        o.PaymentMethod,
-        o.isTicket,
-        o.isFood,
-        
-        s.SeatNumber,
-        sh.StartTime,
-        sh.EndTime,
-        sh.Format,
-        
-        m.Title AS MovieTitle,
-        
-        r.RoomNumber,
-        r.Type AS RoomType,
-        
-        c.Name AS CinemaName,
-        c.Location AS CinemaLocation
-
-      FROM ORDERS o
-      LEFT JOIN SHOWTIME_SEAT s ON o.OrderID = s.OrderID
-      LEFT JOIN SHOWTIME sh ON s.ShowTimeID = sh.ShowTimeID
-      LEFT JOIN MOVIE m ON sh.MovieID = m.MovieID
-      LEFT JOIN ROOM r ON sh.CinemaID = r.CinemaID AND sh.RoomNumber = r.RoomNumber
-      LEFT JOIN CINEMA c ON r.CinemaID = c.CinemaID
-
-      WHERE o.CustomerID = 'CUS001'
-      ORDER BY o.OrderDate DESC;
-
-SELECT 
-        f.ItemID, f.Name, f.Price, f.StockQuantity, f.IsAvailable, 
-        p.Flavor, p.Size
-      FROM FOOD_AND_DRINK f
-      JOIN POPCORN p ON f.ItemID = p.ItemID;
-
-SELECT * FROM FOOD_AND_DRINK WHERE ItemID = 'FAD001';
-
-
-SELECT 
-      S.SeatNumber AS number,
-      S.RoomNumber AS room,
-      S.CinemaID AS cinema,
-      S.SeatType,
-      IF(SS.OrderID IS NULL, 'available', 'occupied') AS status,
-      
-      -- Tính giá dựa trên loại ghế và định dạng suất chiếu
-      ROUND(
-          CASE 
-              WHEN S.SeatType = 'standard' THEN 90000
-              WHEN S.SeatType = 'vip' THEN 120000
-              ELSE 100000  -- fallback
-          END 
-          * 
-          CASE 
-              WHEN ST.Format IN ('4DX', 'IMAX') THEN 1.5
-              ELSE 1
-          END
-      , 0) AS Price
-
-      FROM SEAT S
-      JOIN SHOWTIME ST ON S.CinemaID = ST.CinemaID AND S.RoomNumber = ST.RoomNumber
-      LEFT JOIN SHOWTIME_SEAT SS 
-          ON S.SeatNumber = SS.SeatNumber AND ST.ShowTimeID = SS.ShowTimeID
-      WHERE ST.ShowTimeID = 'SHT001';
+DROP database cinemasystem;

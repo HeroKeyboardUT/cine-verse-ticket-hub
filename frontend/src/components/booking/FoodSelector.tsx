@@ -5,6 +5,7 @@ import { FoodItem } from "@/lib/data_food";
 interface FoodSelectorProps {
   popcornItems: FoodItem[];
   drinkItems: FoodItem[];
+  othersItems: FoodItem[];
   selectedFood: { [key: string]: number };
   onFoodSelect: (itemId: string, quantity: number) => void;
 }
@@ -12,6 +13,7 @@ interface FoodSelectorProps {
 export const FoodSelector: React.FC<FoodSelectorProps> = ({
   popcornItems,
   drinkItems,
+  othersItems,
   selectedFood,
   onFoodSelect,
 }) => {
@@ -65,7 +67,7 @@ export const FoodSelector: React.FC<FoodSelectorProps> = ({
       </div>
 
       {/* Drinks Section */}
-      <div>
+      <div className="mb-6">
         <h4 className="text-lg font-medium text-blue-400 mb-3">Drinks</h4>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {drinkItems.map((drink) => (
@@ -99,6 +101,47 @@ export const FoodSelector: React.FC<FoodSelectorProps> = ({
                   variant="outline"
                   onClick={() => onFoodSelect(drink.id, 1)}
                   disabled={!drink.isAvailable}
+                >
+                  +
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      {/* Others Section */}
+      <div className="mb-6">
+        <h4 className="text-lg font-medium text-orange-400 mb-3">Others</h4>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+          {othersItems.map((others) => (
+            <div
+              key={others.id}
+              className="flex items-center justify-between bg-black/30 p-3 rounded-lg"
+            >
+              <div>
+                <p className="font-medium">{others.name}</p>
+
+                <p className="text-primary">
+                  {others.price.toLocaleString()} VND
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => onFoodSelect(others.id, -1)}
+                  disabled={!selectedFood[others.id]}
+                >
+                  -
+                </Button>
+                <span className="w-6 text-center">
+                  {selectedFood[others.id] || 0}
+                </span>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => onFoodSelect(others.id, 1)}
+                  disabled={!others.isAvailable}
                 >
                   +
                 </Button>
