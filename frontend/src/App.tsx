@@ -21,6 +21,8 @@ import Settings from "./pages/admin/Settings";
 import Cinemas from "./pages/admin/Cinemas";
 import Register from "./pages/Register";
 import Login from "./pages/Login";
+import Profile from "./pages/Profile";
+import OrderDetails from "./pages/OrderDetails";
 
 const queryClient = new QueryClient();
 
@@ -87,6 +89,32 @@ const App = () => (
                 <Navbar />
                 <div className="flex-grow">
                   <WatchMovie />
+                </div>
+                <Footer />
+              </div>
+            }
+          />
+
+          {/* User profile routes */}
+          <Route
+            path="/profile"
+            element={
+              <div className="min-h-screen flex flex-col">
+                <Navbar />
+                <div className="flex-grow">
+                  <Profile />
+                </div>
+                <Footer />
+              </div>
+            }
+          />
+          <Route
+            path="/profile/orders/:orderId"
+            element={
+              <div className="min-h-screen flex flex-col">
+                <Navbar />
+                <div className="flex-grow">
+                  <OrderDetails />
                 </div>
                 <Footer />
               </div>

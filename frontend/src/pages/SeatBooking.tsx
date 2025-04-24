@@ -223,7 +223,7 @@ const SeatBooking = () => {
 
   const handleBookingConfirm = async () => {
     setIsProcessing(true);
-    
+
     try {
       // if (!user || !user.CustomerID) {
       //   throw new Error("User information not available");

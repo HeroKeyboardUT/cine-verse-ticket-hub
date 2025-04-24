@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { fetchMovieById, type Movie } from "@/lib/data_movies";
+import { fetchMovieById, fetchMovies, type Movie } from "@/lib/data_movies";
 import { fetchShowtimeByMovieId, type Showtime } from "@/lib/data_showtimes";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -24,6 +24,7 @@ const MovieDetails = () => {
   const { movieId } = useParams<{ movieId: string }>();
   const [movie, setMovie] = useState<Movie | null>(null);
   const [showtimes, setShowtimes] = useState<Showtime[]>([]);
+  const [similarMovies, setSimilarMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -32,6 +33,20 @@ const MovieDetails = () => {
       try {
         const [fetchedMovie] = await Promise.all([fetchMovieById(movieId!)]);
         setMovie(fetchedMovie);
+
+        // Fetch similar movies based on genre
+        if (fetchedMovie && fetchedMovie.genre) {
+          const allMovies = await fetchMovies();
+          const filtered = allMovies
+            .filter(
+              (m) =>
+                m.id !== fetchedMovie.id &&
+                m.genre &&
+                m.genre.some((g) => fetchedMovie.genre.includes(g))
+            )
+            .slice(0, 6); // Limit to 6 similar movies
+          setSimilarMovies(filtered);
+        }
       } catch (err) {
         setError("Failed to load movie or showtimes");
       } finally {
@@ -183,7 +198,11 @@ const MovieDetails = () => {
         </Tabs>
 
         <div className="mt-24">
-          <MovieGrid title="Phim tương tự" movies={[]} />
+          <MovieGrid
+            title={`Phim tương tự với thể loại ${movie?.genre?.join(", ")}`}
+            movies={similarMovies}
+            emptyMessage="Không tìm thấy phim tương tự"
+          />
         </div>
       </div>
     </div>
