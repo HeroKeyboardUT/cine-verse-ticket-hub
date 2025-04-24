@@ -180,9 +180,9 @@ CREATE TABLE MOVIE_GENRE (
 
 CREATE TABLE VOUCHER_CONSTRAINT (
     VoucherID CHAR(6) NOT NULL,
-    Type VARCHAR(10) NOT NULL,
-    Above FLOAT NOT NULL,
-    Below FLOAT NOT NULL,
+    Type ENUM("TotalOrderPrice", "MaxValue", "TotalSpent"),
+    Above FLOAT,
+    Below FLOAT,
     PRIMARY KEY (VoucherID, Type),
     FOREIGN KEY (VoucherID) REFERENCES VOUCHER(VoucherID)
 );
