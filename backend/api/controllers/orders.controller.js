@@ -62,7 +62,12 @@ class OrdersController {
         );
         await Promise.all(ticketPromises);
       }
-  
+      
+      //4. Cập nhật trạng thái order
+      await ordersModel.updateOrder(orderID, {
+        status: "Booked",
+      });
+
       // 4. Trả về orderId nếu tất cả thành công
       res.status(201).json({ orderId: orderID });
   
