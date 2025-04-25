@@ -22,7 +22,7 @@ class OrdersModel {
 
     const [result] = await pool.query(
       `INSERT INTO ORDERS (CustomerID, PaymentMethod, VoucherID, Status) 
-       VALUES (?, ?, ?, 'Processing')`,
+       VALUES (?, ?, ?, 'Pending')`,
       [customerId, paymentMethod, voucherId || null]
     );
 
@@ -96,10 +96,11 @@ class OrdersModel {
   }
   
   async updateOrderStatus(orderId, status) {
-    await pool.query(
+    const result = await pool.query(
       `UPDATE ORDERS SET Status = ? WHERE OrderID = ?`,
       [status, orderId]
     );
+    return result[0].affectedRows > 0;
   }
 }
 
