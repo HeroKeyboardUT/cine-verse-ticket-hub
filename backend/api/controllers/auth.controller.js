@@ -118,7 +118,7 @@ class AuthController {
                     return res.status(401).json({ message: "Invalid username or password" });
                 }
                 // Generate JWT token for admin
-                const token = jwt.sign({ id: adminUser.ManagerID }, JWT_SECRET, { expiresIn: TOKEN_EXPIRY });
+                const token = jwt.sign({ id: adminUser.ManagerID }, JWT_SECRET);
                 // Return admin user data and token
                 res.json({
                     message: "Admin login successful",
