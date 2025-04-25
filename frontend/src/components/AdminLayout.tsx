@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import AdminAuthGuard from "./AdminAuthGuard";
 import { toast } from "@/hooks/use-toast";
+import path from "path";
 
 const AdminLayout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -42,6 +43,7 @@ const AdminLayout = () => {
     { path: "/admin/cinemas", icon: Building2, label: "Cinemas" },
     { path: "/admin/users", icon: Users, label: "Users" },
     { path: "/admin/showtimes", icon: Calendar, label: "Showtimes" },
+    {path: "/admin/orders", icon: Ticket, label: "Orders" },
     { path: "/admin/reports", icon: BarChart3, label: "Reports" },
     { path: "/admin/settings", icon: Settings, label: "Settings" },
   ];

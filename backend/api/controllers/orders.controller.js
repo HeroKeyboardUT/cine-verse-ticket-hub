@@ -104,6 +104,44 @@ class OrdersController {
         .json({ message: "Error deleting order", error: error.message });
     }
   }
+
+  async getFoodByOrderId(req, res) {
+    try {
+      const foodItems = await OrdersModel.getFoodByOrderId(req.params.id);
+      if (!foodItems) return res.status(404).json({ message: "Food not found" });
+      res.status(200).json(foodItems);
+    } catch (error) {
+      res
+        .status(500)
+        .json({ message: "Error retrieving food items", error: error.message });
+    }
+  }
+
+  async getTicketByOrderId(req, res) {  
+    try {
+      const tickets = await OrdersModel.getTicketByOrderId(req.params.id);
+      if (!tickets) return res.status(404).json({ message: "Tickets not found" });
+      res.status(200).json(tickets);
+    } catch (error) {
+      res
+        .status(500)
+        .json({ message: "Error retrieving tickets", error: error.message });
+    }
+  }
+
+  async updateOrderStatus(req, res) {
+    try {
+      const { status } = req.body;
+      const orderId = req.params.id;
+      const updatedOrder = await OrdersModel.updateOrderStatus(orderId, status);
+      if (!updatedOrder) return res.status(404).json({ message: "Order not found" });
+      res.status(200).json(updatedOrder);
+    } catch (error) {
+      res
+        .status(500)
+        .json({ message: "Error updating order status", error: error.message });
+    }
+  }
 }
 
 export default new OrdersController();
