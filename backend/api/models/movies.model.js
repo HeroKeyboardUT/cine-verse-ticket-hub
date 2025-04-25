@@ -51,7 +51,6 @@ class MoviesModel {
 
   async createMovie(movie) {
     const {
-      MovieID,
       Title,
       ReleaseDate,
       Duration,
@@ -68,12 +67,12 @@ class MoviesModel {
     } = movie;
     await pool.query(
       `
-      INSERT INTO MOVIE
-      (MovieID, Title, ReleaseDate, Duration, Language, Description, PosterURL, AgeRating, Studio, Country, Director, CustomerRating, isShow)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO MOVIE (
+          Title, ReleaseDate, Duration, Language, Description, 
+          PosterURL, AgeRating, Studio, Country, Director, isShow
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `,
       [
-        MovieID,
         Title,
         ReleaseDate,
         Duration,
@@ -89,17 +88,32 @@ class MoviesModel {
       ]
     );
 
-    if (Genres) {
-      const genres = Genres.split(",").map((g) => g.trim());
+    // Then retrieve the new ID
+    const [newMovieRow] = await pool.query(
+      "SELECT MovieID FROM MOVIE WHERE Title = ? ORDER BY MovieID DESC LIMIT 1",
+      [Title]
+    );
+
+    const newMovieId = newMovieRow[0].MovieID;
+
+    // Add genres if provided
+    if (Genres && newMovieId) {
+      const genres =
+        typeof Genres === "string"
+          ? Genres.split(",").map((g) => g.trim())
+          : Genres;
+
       for (const genre of genres) {
-        await pool.query(
-          `
-          INSERT INTO MOVIE_GENRE (MovieID, Genre) VALUES (?, ?)
-        `,
-          [MovieID, genre]
-        );
+        if (genre) {
+          await pool.query(
+            `INSERT INTO MOVIE_GENRE (MovieID, Genre) VALUES (?, ?)`,
+            [newMovieId, genre]
+          );
+        }
       }
     }
+
+    return newMovieId;
   }
 
   async updateMovie(id, movie) {
@@ -154,8 +168,18 @@ class MoviesModel {
   }
 
   async deleteMovie(id) {
+    // Delete related showtimes if any
+    await pool.query("DELETE FROM SHOWTIME WHERE MovieID = ?", [id]);
+
+    // Delete from MOVIE_GENRE
     await pool.query("DELETE FROM MOVIE_GENRE WHERE MovieID = ?", [id]);
-    await pool.query("DELETE FROM MOVIE WHERE MovieID = ?", [id]);
+
+    // Delete from MOVIE table
+    const [result] = await pool.query("DELETE FROM MOVIE WHERE MovieID = ?", [
+      id,
+    ]);
+
+    return result.affectedRows > 0;
   }
 }
 

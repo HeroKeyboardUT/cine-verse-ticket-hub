@@ -145,7 +145,7 @@ const MovieList = () => {
   const handleDeleteMovie = async (movieId: string) => {
     if (confirm("Are you sure you want to delete this movie?")) {
       try {
-        await deleteMovie(movieId);
+        deleteMovie(movieId);
         setMoviesData((prev) => prev.filter((movie) => movie.id !== movieId));
         toast({
           title: "Movie deleted",

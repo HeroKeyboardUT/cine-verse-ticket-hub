@@ -138,3 +138,13 @@ export const getOrderById = async (orderId: string): Promise<Order | null> => {
     return null;
   }
 };
+
+export const getAllOrders = async (): Promise<Order[]> => {
+  try {
+    const data = await fetch(API_ORDER.GET_ALL_ORDERS);
+    return data.json();
+  } catch (error) {
+    console.error("Error fetching all orders:", error);
+    return [];
+  }
+};

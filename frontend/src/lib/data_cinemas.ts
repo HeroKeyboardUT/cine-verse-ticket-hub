@@ -31,10 +31,17 @@ export const saveCinema = async (
   cinema: Cinema,
   isUpdate: boolean
 ): Promise<void> => {
-  const url = isUpdate ? API_CINEMA.UPDATE_CINEMA : API_CINEMA.CREATE_CINEMA;
+  let url;
   const method = isUpdate ? "PUT" : "POST";
+  if (isUpdate) {
+    // For update, we need to append the cinema ID to the URL
+    url = `${API_CINEMA.GET_CINEMAS}/${cinema.id}`;
+  } else {
+    // For create, we use the base URL
+    url = API_CINEMA.CREATE_CINEMA;
+  }
   const response = await fetch(url, {
-    method,
+    method: method,
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       CinemaID: cinema.id,
@@ -45,6 +52,7 @@ export const saveCinema = async (
       PhoneNumbers: cinema.phoneNumbers.filter((phone) => phone.trim()),
     }),
   });
+
   if (!response.ok) {
     const errorData = await response.json();
     throw new Error(

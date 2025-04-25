@@ -69,7 +69,6 @@ const Cinemas = () => {
 
   const handleSaveCinema = async (cinema: Cinema) => {
     try {
-      console.log("Dữ liệu gửi đi:", cinema);
       await saveCinema(cinema, !!currentCinema);
       toast({
         title: currentCinema ? "Cập nhật thành công" : "Thêm thành công",
@@ -234,18 +233,17 @@ const Cinemas = () => {
                   .map((phone) => phone.trim())
                   .filter((phone) => phone),
               };
-              console.log("Cinema trước khi gửi:", cinema);
               handleSaveCinema(cinema);
             }}
           >
             <div className="space-y-4">
-              <Input
+              {/* <Input
                 name="id"
                 placeholder="ID (ví dụ: CIN001)"
                 defaultValue={currentCinema?.id || ""}
                 disabled={!!currentCinema}
                 required={!currentCinema}
-              />
+              /> */}
               <Input
                 name="name"
                 placeholder="Tên rạp"

@@ -3,7 +3,7 @@
 
 import API_MOVIES from "./API_lib/API_MOVIES.ts";
 import { formatDuration } from "../lib/utils.ts";
-import exp from "constants";
+
 export interface Movie {
   id: string;
   title: string;
@@ -214,7 +214,7 @@ export const deleteMovie = async (movieId: string): Promise<void> => {
       }
     );
 
-    console.log(`http://localhost:5000/api/movies/${movieId}`);
+    console.log("response", response);
 
     if (!response.ok) {
       const errorData = await response.json();
