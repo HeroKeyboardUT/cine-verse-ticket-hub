@@ -20,6 +20,7 @@ import {
   Clipboard,
   Check,
   ShoppingBag,
+  Gift,
 } from "lucide-react";
 import { getOrderById, Order } from "@/lib/data_order";
 import { format } from "date-fns";
