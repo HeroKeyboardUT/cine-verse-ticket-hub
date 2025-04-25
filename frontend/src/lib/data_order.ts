@@ -138,3 +138,28 @@ export const getOrderById = async (orderId: string): Promise<Order | null> => {
     return null;
   }
 };
+export const getAllOrders = async (): Promise<Order[]> => {
+  try {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      throw new Error("Authentication required");
+    }
+
+    const response = await fetch(API_ORDER.GET_ALL_ORDERS, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Failed to fetch orders");
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error fetching all orders:", error);
+    return [];
+  }
+};

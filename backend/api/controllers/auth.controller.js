@@ -29,7 +29,7 @@ class AuthController {
     }
 
     // Hash the password
-    const hashedPassword = bcrypt.hashSync(Password, 10);
+    // const hashedPassword = bcrypt.hashSync(Password, 10);
 
     // Save user to database using model
     UserModel.createCustomer({
@@ -38,7 +38,7 @@ class AuthController {
       Email,
       PhoneNumber,
       MembershipLevel,
-      password: hashedPassword,
+      password: Password,
     })
       .then(async () => {
         try {
