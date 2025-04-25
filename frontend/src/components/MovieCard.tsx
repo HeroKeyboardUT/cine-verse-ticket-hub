@@ -13,10 +13,15 @@ interface MovieCardProps {
     genre: string[];
   };
 }
-
+const handleClick = () => {
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth",
+  });
+};
 const MovieCard = ({ movie }: MovieCardProps) => {
   return (
-    <Link to={`/movie/${movie.id}`}>
+    <Link to={`/movie/${movie.id}`} onClick={handleClick}>
       <Card className="overflow-hidden bg-card border-0 rounded-lg movie-card">
         <div className="relative aspect-[2/3] overflow-hidden">
           <img

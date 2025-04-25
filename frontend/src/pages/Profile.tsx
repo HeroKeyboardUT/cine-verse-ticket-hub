@@ -12,7 +12,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
-  User,
   CreditCard,
   Ticket,
   Calendar,
@@ -35,6 +34,7 @@ import { UserStats } from "@/components/profile/UserStats";
 import { ProfileSkeleton } from "@/components/profile/ProfileSkeleton";
 import { EditProfileDialog } from "@/components/profile/EditProfileDialog";
 import { fetchUserOrders, Order } from "@/lib/data_order";
+import { User, fetchUserById } from "@/lib/data_user";
 import { format } from "date-fns";
 
 const Profile = () => {
@@ -68,11 +68,12 @@ const Profile = () => {
         if (!userData.id) {
           throw new Error("User data not found");
         }
-
+        const user = await fetchUserById(userData.id);
+        console.log(user);
         // Fetch user orders
         const userOrders = await fetchUserOrders(userData.id);
 
-        setUser(userData);
+        setUser(user);
         setOrders(userOrders);
       } catch (error) {
         console.error("Error fetching user data:", error);
@@ -133,7 +134,7 @@ const Profile = () => {
 
   // Filter orders by status
   const upcomingOrders = orders.filter(
-    (order) => order.Status === "Processing" || order.Status === "Confirmed"
+    (order) => order.Status === "Processing" || order.Status === "Booked"
   );
 
   const pastOrders = orders.filter(
@@ -179,7 +180,6 @@ const Profile = () => {
                   )}
                   {user.RegistrationDate && (
                     <div className="flex items-center gap-2 text-xs text-muted-foreground mt-4">
-                      <User className="h-3.5 w-3.5" />
                       <span>
                         Member since{" "}
                         {format(new Date(user.RegistrationDate), "MMMM yyyy")}
@@ -212,9 +212,9 @@ const Profile = () => {
 
           <UserStats
             totalOrders={orders.length}
-            totalSpent={user.TotalSpent || 0}
+            totalSpent={user.totalSpent || 0}
             membershipLevel={user.MembershipLevel}
-            pointsEarned={Math.floor((user.TotalSpent || 0) / 10000)}
+            pointsEarned={Math.floor((user.totalSpent || 0) / 10000)}
           />
         </div>
 
@@ -287,7 +287,7 @@ const Profile = () => {
                     <div className="flex items-start space-x-3 p-3 rounded-lg hover:bg-muted transition">
                       <div className="h-20 w-14 rounded bg-muted flex-shrink-0 overflow-hidden">
                         <img
-                          src="https://via.placeholder.com/100x140"
+                          src={orders[0].PosterURL}
                           alt="Movie poster"
                           className="h-full w-full object-cover"
                         />

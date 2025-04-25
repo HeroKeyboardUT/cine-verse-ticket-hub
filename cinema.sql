@@ -682,6 +682,7 @@ SET SQL_SAFE_UPDATES = 0;
 
 INSERT INTO MANAGER (Username, Password) VALUES
 ('admin', 'admin123'),
+('Hieudeptrai','Hieudeptrai123'),
 ('Haodeptrai', 'Haodeptrai123');
 
 INSERT INTO ID_COUNTER (Prefix, Counter) VALUES
@@ -1022,7 +1023,6 @@ VALUES
 ('VCH004', 'TotalOrderPrice', 1000000, 300000),
 ('VCH004', 'MaxValue', 150000, NULL);
 
-select * from CUSTOMER;
 
 -- INSERT INTO ORDERS (OrderDate, Status, PaymentMethod, VoucherID, CustomerID) VALUES
 -- ('2025-04-23 10:00:00', 'Completed', 'Credit Card', 'VCH001', 'CUS001'),
@@ -1169,6 +1169,17 @@ CALL InsertFoodAndDrink('DRINK', 'Pepsi', 150, TRUE, 30000.00, NULL, 'Large', @i
 CALL InsertFoodAndDrink('OTHERS', 'Hamburger', 50, TRUE, 70000.00, NULL, NULL, @item_id5);
 
 
+
+select * from ORDERs;
+select * from SHOWTIME_SEAT;
+select * from CUSTOMER;
+select * from FOOD_DRINK_ORDER;
+
+
+
+
+
+
 -- ------------------------------------------------
 -- -- Xóa dữ liệu mẫu
 DELETE FROM SHOWTIME_SEAT;
@@ -1190,5 +1201,6 @@ DELETE FROM FOOD_AND_DRINK;
 DELETE FROM CINEMA_PHONE;
 DELETE FROM CINEMA;
 DELETE FROM ID_COUNTER;
+DELETE FROM MANAGER;
 -- ----------------------------------------------------- 
 DROP database cinemasystem;

@@ -54,7 +54,7 @@ import { Order } from "@/lib/data_order";
 
 const UsersPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortField, setSortField] = useState<keyof User>("name");
+  const [sortField, setSortField] = useState<keyof User>("FullName");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [userList, setUserList] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
@@ -66,7 +66,7 @@ const UsersPage = () => {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [newUser, setNewUser] = useState({
-    fullName: "",
+    FullName: "",
     email: "",
     dateOfBirth: "",
     phoneNumber: "",
@@ -103,7 +103,7 @@ const UsersPage = () => {
     if (searchTerm.trim()) {
       filtered = filtered.filter(
         (user) =>
-          user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          user.FullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
           user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
           user.role.toLowerCase().includes(searchTerm.toLowerCase())
       );
@@ -141,7 +141,7 @@ const UsersPage = () => {
     e.preventDefault();
     try {
       await createUser({
-        fullName: newUser.fullName,
+        FullName: newUser.FullName,
         email: newUser.email,
         dateOfBirth: newUser.dateOfBirth || null,
         phoneNumber: newUser.phoneNumber || null,
@@ -151,7 +151,7 @@ const UsersPage = () => {
       setUserList(users);
       setShowAddDialog(false);
       setNewUser({
-        fullName: "",
+        FullName: "",
         email: "",
         dateOfBirth: "",
         phoneNumber: "",
@@ -177,7 +177,7 @@ const UsersPage = () => {
 
     try {
       await updateUser(selectedUser.id, {
-        fullName: newUser.fullName,
+        FullName: newUser.FullName,
         email: newUser.email,
         dateOfBirth: newUser.dateOfBirth || null,
         phoneNumber: newUser.phoneNumber || null,
@@ -187,7 +187,7 @@ const UsersPage = () => {
       setUserList(users);
       setShowEditDialog(false);
       setNewUser({
-        fullName: "",
+        FullName: "",
         email: "",
         dateOfBirth: "",
         phoneNumber: "",
@@ -305,9 +305,9 @@ const UsersPage = () => {
                     <Label htmlFor="fullName">Họ và tên</Label>
                     <Input
                       id="fullName"
-                      value={newUser.fullName}
+                      value={newUser.FullName}
                       onChange={(e) =>
-                        setNewUser({ ...newUser, fullName: e.target.value })
+                        setNewUser({ ...newUser, FullName: e.target.value })
                       }
                       placeholder="Nguyễn Văn A"
                     />
@@ -376,11 +376,11 @@ const UsersPage = () => {
                   <TableHead className="w-[80px]">ID</TableHead>
                   <TableHead
                     className="cursor-pointer"
-                    onClick={() => handleSort("name")}
+                    onClick={() => handleSort("FullName")}
                   >
                     <div className="flex items-center">
                       Họ và tên
-                      {sortField === "name" && (
+                      {sortField === "FullName" && (
                         <ArrowUpDown className="ml-2 h-4 w-4" />
                       )}
                     </div>
@@ -435,7 +435,7 @@ const UsersPage = () => {
                   filteredUsers.map((user) => (
                     <TableRow key={user.id}>
                       <TableCell className="font-medium">{user.id}</TableCell>
-                      <TableCell>{user.name}</TableCell>
+                      <TableCell>{user.FullName}</TableCell>
                       <TableCell>{user.email}</TableCell>
                       <TableCell className="hidden md:table-cell">
                         {user.membershipLevel}
@@ -458,7 +458,7 @@ const UsersPage = () => {
                             onClick={() => {
                               setSelectedUser(user);
                               setNewUser({
-                                fullName: user.name,
+                                FullName: user,
                                 email: user.email,
                                 dateOfBirth: user.dateOfBirth
                                   ? new Date(user.dateOfBirth)
@@ -502,9 +502,9 @@ const UsersPage = () => {
               <Label htmlFor="fullName">Họ và tên</Label>
               <Input
                 id="fullName"
-                value={newUser.fullName}
+                value={newUser.FullName}
                 onChange={(e) =>
-                  setNewUser({ ...newUser, fullName: e.target.value })
+                  setNewUser({ ...newUser, FullName: e.target.value })
                 }
                 placeholder="Nguyễn Văn A"
               />
@@ -595,9 +595,9 @@ const UsersPage = () => {
                   </TableRow>
                 ) : (
                   orders.map((order) => (
-                    <TableRow key={order.orderId}>
+                    <TableRow key={order.OrderID}>
                       <TableCell className="font-medium">
-                        {order.orderId}
+                        {order.OrderID}
                       </TableCell>
                       <TableCell>{formatDate(order.orderTime)}</TableCell>
                       <TableCell>{order.status}</TableCell>

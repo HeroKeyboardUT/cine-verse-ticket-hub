@@ -35,6 +35,7 @@ export interface Order {
 
   // Movie-related info
   MovieTitle?: string;
+  PosterURL?: string;
   StartTime?: string;
   EndTime?: string;
   Format?: string;
@@ -43,6 +44,7 @@ export interface Order {
   CinemaName?: string;
   CinemaLocation?: string;
   RoomNumber?: string;
+  SeatType?: string;
   RoomType?: string;
   SeatNumber?: string;
 }

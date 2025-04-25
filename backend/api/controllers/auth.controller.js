@@ -45,11 +45,9 @@ class AuthController {
           // Find the newly created user by email to get their ID
           const user = await UserModel.getCustomerByEmail(Email);
           if (!user) {
-            return res
-              .status(500)
-              .json({
-                message: "User created but failed to retrieve user data",
-              });
+            return res.status(500).json({
+              message: "User created but failed to retrieve user data",
+            });
           }
 
           // Generate JWT token
@@ -100,7 +98,8 @@ class AuthController {
         }
 
         // Compare passwords
-        const isPasswordValid = bcrypt.compareSync(Password, user.Password);
+        // const isPasswordValid = bcrypt.compareSync(Password, user.Password);\
+        const isPasswordValid = Password === user.Password;
 
         if (!isPasswordValid) {
           return res.status(401).json({ message: "Invalid email or password" });

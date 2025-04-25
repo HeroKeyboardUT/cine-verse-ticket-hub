@@ -71,6 +71,7 @@ class CustomerModel {
         sh.EndTime,
         sh.Format,        
         m.Title AS MovieTitle,
+        m.PosterURL AS PosterURL,
         r.RoomNumber,
         r.Type AS RoomType,
         c.Name AS CinemaName,
@@ -99,8 +100,14 @@ class CustomerModel {
   }
 
   async createCustomer(customer) {
-    const { FullName, DateOfBirth, Email, PhoneNumber, MembershipLevel, password } =
-      customer;
+    const {
+      FullName,
+      DateOfBirth,
+      Email,
+      PhoneNumber,
+      MembershipLevel,
+      password,
+    } = customer;
     if (!FullName || !Email) {
       throw new Error("Thiếu thông tin bắt buộc: FullName, Email");
     }
@@ -143,11 +150,11 @@ class CustomerModel {
         WHERE Email = ?`,
         [email]
       );
-      
+
       if (rows.length === 0) {
         return null;
       }
-      
+
       const customer = rows[0];
       return {
         ...customer,
@@ -162,25 +169,25 @@ class CustomerModel {
       throw new Error(`Error retrieving customer: ${error.message}`);
     }
   }
-  
+
   // New method to update password
   async updatePassword(email, password) {
     try {
       const [result] = await pool.query(
-        'UPDATE CUSTOMER SET Password = ? WHERE Email = ?',
+        "UPDATE CUSTOMER SET Password = ? WHERE Email = ?",
         [password, email]
       );
-      
+
       if (result.affectedRows === 0) {
         throw new Error("User not found");
       }
-      
+
       return true;
     } catch (error) {
       throw new Error(`Error updating password: ${error.message}`);
     }
   }
-  
+
   // New method to find customer by ID with minimal fields
   async getCustomerAuthById(id) {
     try {
@@ -194,11 +201,11 @@ class CustomerModel {
         WHERE CustomerID = ?`,
         [id]
       );
-      
+
       if (rows.length === 0) {
         return null;
       }
-      
+
       return rows[0];
     } catch (error) {
       throw new Error(`Error retrieving customer: ${error.message}`);

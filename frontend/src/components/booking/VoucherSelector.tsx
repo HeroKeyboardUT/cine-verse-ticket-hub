@@ -173,7 +173,10 @@ export const VoucherSelector: React.FC<VoucherSelectorProps> = ({
                       : "border-gray-700"
                   } ${!isEligible(voucher) ? "opacity-60" : ""}`}
                   onClick={() =>
-                    isEligible(voucher) && onSelectVoucher(voucher)
+                    isEligible(voucher) &&
+                    (selectedVoucher?.id === voucher.id
+                      ? onSelectVoucher(null)
+                      : onSelectVoucher(voucher))
                   }
                 >
                   <CardContent className="p-4">

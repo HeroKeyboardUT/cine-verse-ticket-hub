@@ -7,12 +7,14 @@ class OrdersModel {
   }
 
   async getOrderById(id) {
-    const [rows] = await pool.query(`SELECT * FROM ORDERS WHERE OrderID = ?`, [
-      id,
-    ]);
+    const [rows] = await pool.query(
+      `
+      SELECT * FROM ORDERS WHERE OrderID = ?
+      `,
+      [id]
+    );
     return rows.length > 0 ? rows[0] : null;
   }
-
 
   async createOrder(orderData) {
     // Basic order creation
@@ -23,12 +25,12 @@ class OrdersModel {
        VALUES (?, ?, ?, 'Processing')`,
       [customerId, paymentMethod, voucherId || null]
     );
-    
+
     // Dùng SELECT để lấy lại OrderID đã tạo
     const [orderRows] = await pool.query(
       `SELECT * FROM ORDERS WHERE OrderID = (SELECT CONCAT('ORD', LPAD(Counter, 3, '0')) FROM ID_COUNTER WHERE Prefix = 'ORD')`
     );
-    
+
     return orderRows[0];
   }
 

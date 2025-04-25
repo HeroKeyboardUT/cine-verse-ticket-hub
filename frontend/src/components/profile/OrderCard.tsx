@@ -30,7 +30,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
         return "bg-green-600";
       case "Processing":
         return "bg-blue-600";
-      case "Confirmed":
+      case "Booked":
         return "bg-yellow-600";
       case "Cancelled":
         return "bg-red-600";
@@ -38,7 +38,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
         return "bg-gray-600";
     }
   };
-
+  // console.log(order, '  console.log("OrderCard", order);');
   return (
     <Card className="overflow-hidden transition-shadow hover:shadow-md">
       <CardContent className="p-0">
@@ -71,7 +71,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="sm:w-24 w-full h-32 sm:h-36 bg-muted rounded-md overflow-hidden flex-shrink-0">
                 <img
-                  src="https://via.placeholder.com/200x300"
+                  src={order.PosterURL}
                   alt={order.MovieTitle}
                   className="w-full h-full object-cover"
                 />

@@ -27,9 +27,16 @@ class OrdersController {
   }
 
   async createOrder(req, res) {
-    const { showtimeId, movieId, seatNumbers, foodItems, voucherId, paymentMethod } = req.body;
+    const {
+      showtimeId,
+      movieId,
+      seatNumbers,
+      foodItems,
+      voucherId,
+      paymentMethod,
+    } = req.body;
     const { CustomerID } = req.user;
-  
+
     try {
       // 1. Tạo đơn hàng chính
       const order = await ordersModel.createOrder({
@@ -38,31 +45,28 @@ class OrdersController {
         voucherId,
       });
       const orderID = order.OrderID;
-      // 2. Thêm món ăn nếu có
       if (Array.isArray(foodItems) && foodItems.length > 0) {
-        const foodPromises = foodItems.map(foodItem =>
-          ordersModel.createFoodOrder({
+        for (const foodItem of foodItems) {
+          await ordersModel.createFoodOrder({
             orderId: orderID,
             foodId: foodItem.itemId,
             quantity: foodItem.quantity,
-          })
-        );
-        await Promise.all(foodPromises);
+          });
+        }
       }
-  
+
       // 3. Thêm vé nếu có
       if (Array.isArray(seatNumbers) && seatNumbers.length > 0) {
-        const ticketPromises = seatNumbers.map(seatNumber =>
-          ordersModel.createTicketOrder({
+        for (const seatNumber of seatNumbers) {
+          await ordersModel.createTicketOrder({
             orderId: orderID,
             showtimeId,
             movieId,
             seatNumber,
-          })
-        );
-        await Promise.all(ticketPromises);
+          });
+        }
       }
-      
+
       //4. Cập nhật trạng thái order
       await ordersModel.updateOrder(orderID, {
         status: "Booked",
@@ -70,7 +74,6 @@ class OrdersController {
 
       // 4. Trả về orderId nếu tất cả thành công
       res.status(201).json({ orderId: orderID });
-  
     } catch (error) {
       console.error("Error creating order:", error);
       res.status(500).json({
@@ -88,7 +91,7 @@ class OrdersController {
       res
         .status(500)
         .json({ message: "Error updating order", error: error.message });
-    } 
+    }
   }
 
   async deleteOrder(req, res) {

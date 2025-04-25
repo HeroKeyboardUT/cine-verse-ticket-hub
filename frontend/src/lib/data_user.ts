@@ -2,7 +2,7 @@ import API_USER from "./API_lib/API_USER";
 import { Order } from "./data_order";
 export interface User {
   id: string;
-  name: string;
+  FullName: string;
   email: string;
   role: string;
   dateOfBirth: string | null;
@@ -21,7 +21,7 @@ export const fetchUsers = async (): Promise<User[]> => {
   const data = await response.json();
   return data.map((user: any) => ({
     id: user.CustomerID,
-    name: user.FullName,
+    FullName: user.FullName,
     email: user.Email,
     role: user.MembershipLevel === "VIP" ? "VIP" : "Customer",
     dateOfBirth: user.DateOfBirth || null,
@@ -31,6 +31,26 @@ export const fetchUsers = async (): Promise<User[]> => {
     totalSpent: parseFloat(user.TotalSpent) || 0,
     totalOrders: parseInt(user.TotalOrders) || 0,
   }));
+};
+
+export const fetchUserById = async (id: string): Promise<User | null> => {
+  const response = await fetch(`${API_USER.GET_ALL_USERS}/${id}`);
+  if (!response.ok) {
+    throw new Error(`HTTP Error: ${response.status} - ${response.statusText}`);
+  }
+  const data = await response.json();
+  return {
+    id: data.CustomerID,
+    FullName: data.FullName,
+    email: data.Email,
+    role: data.MembershipLevel === "VIP" ? "VIP" : "Customer",
+    dateOfBirth: data.DateOfBirth || null,
+    phoneNumber: data.PhoneNumber || null,
+    membershipLevel: data.MembershipLevel || "Standard",
+    registrationDate: data.RegistrationDate || null,
+    totalSpent: parseFloat(data.TotalSpent) || 0,
+    totalOrders: parseInt(data.TotalOrders) || 0,
+  };
 };
 
 export const createUser = async (user: Partial<User>): Promise<void> => {
