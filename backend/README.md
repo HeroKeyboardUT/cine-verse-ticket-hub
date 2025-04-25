@@ -1,13 +1,11 @@
 # Cine-Verse Ticket Hub Backend API Documentation
 
 # Dùng database
-`
-    import db from config/database.js
-`
+```js
+import db from 'config/database.js';
 
-`
-db.query(....)
-`
+const result = db.query(....);
+```
 
 # API Documentation
 
@@ -488,98 +486,112 @@ db.query(....)
 - **Endpoint**: `GET /api/orders`
 - **Description**: Retrieves a list of all orders
 - **Request Body**: None
-- **Response Body**: Not implemented
-- **Error Codes**: Not implemented
-- **Status**: ❌ Not Implemented
+- **Response Body**:
+  ```json
+  [
+    {
+      "OrderID": "order_id",
+      "CustomerID": "customer_id",
+      "OrderDate": "2023-01-01T12:00:00",
+      "TotalAmount": 100.00,
+      "Status": "Booked",
+      "PaymentMethod": "Credit Card",
+      "VoucherID": "voucher_id"
+    },
+    ...
+  ]
+  ```
+- **Error Codes**:
+  - 500: Error retrieving orders
+- **Status**: ✅ Implemented
 
 ### 2. Get Order By ID
 - **Endpoint**: `GET /api/orders/:id`
 - **Description**: Retrieves details of a specific order
 - **Request Parameters**:
   - id: Order ID
-- **Response Body**: Not implemented
-- **Error Codes**: Not implemented
-- **Status**: ❌ Not Implemented
+- **Response Body**:
+  ```json
+  {
+    "OrderID": "order_id",
+    "CustomerID": "customer_id",
+    "OrderDate": "2023-01-01T12:00:00",
+    "TotalAmount": 100.00,
+    "Status": "Booked",
+    "PaymentMethod": "Credit Card",
+    "VoucherID": "voucher_id"
+  }
+  ```
+- **Error Codes**:
+  - 404: Order not found
+  - 500: Error retrieving order
+- **Status**: ✅ Implemented
 
 ### 3. Create Order
 - **Endpoint**: `POST /api/orders`
 - **Description**: Creates a new order
-- **Request Body**: Not implemented
-- **Response Body**: Not implemented
-- **Error Codes**: Not implemented
-- **Status**: ❌ Not Implemented
+- **Request Body**:
+  ```json
+  {
+    "showtimeId": "showtime_id",
+    "movieId": "movie_id",
+    "seatNumbers": ["A1", "A2"],
+    "foodItems": [
+      {
+        "itemId": "food_id",
+        "quantity": 2
+      }
+    ],
+    "voucherId": "voucher_id",
+    "paymentMethod": "Credit Card"
+  }
+  ```
+- **Response Body**:
+  ```json
+  {
+    "orderId": "order_id"
+  }
+  ```
+- **Error Codes**:
+  - 500: Failed to create full order
+- **Status**: ✅ Implemented
 
 ### 4. Update Order
 - **Endpoint**: `PUT /api/orders/:id`
 - **Description**: Updates an existing order
 - **Request Parameters**:
   - id: Order ID
-- **Request Body**: Not implemented
-- **Response Body**: Not implemented
-- **Error Codes**: Not implemented
-- **Status**: ❌ Not Implemented
+- **Request Body**: 
+  ```json
+  {
+    "status": "Completed",
+    "paymentMethod": "Credit Card"
+  }
+  ```
+- **Response Body**:
+  ```json
+  {
+    "message": "Order updated successfully"
+  }
+  ```
+- **Error Codes**:
+  - 500: Error updating order
+- **Status**: ✅ Implemented
 
 ### 5. Delete Order
 - **Endpoint**: `DELETE /api/orders/:id`
 - **Description**: Deletes an order
 - **Request Parameters**:
   - id: Order ID
-- **Response Body**: Not implemented
-- **Error Codes**: Not implemented
-- **Status**: ❌ Not Implemented
-
-## Authentication API
-
-### 1. Register
-- **Endpoint**: `POST /api/auth/register`
-- **Description**: Registers a new user
-- **Request Body**: Not implemented
-- **Response Body**: Not implemented
-- **Error Codes**: Not implemented
-- **Status**: ❌ Not Implemented
-
-### 2. Login
-- **Endpoint**: `POST /api/auth/login`
-- **Description**: Logs in a user
-- **Request Body**: Not implemented
-- **Response Body**: Not implemented
-- **Error Codes**: Not implemented
-- **Status**: ❌ Not Implemented
-
-### 3. OTP Request
-- **Endpoint**: `POST /api/auth/password/otp`
-- **Description**: Requests an OTP for password reset
-- **Request Body**: Not implemented
-- **Response Body**: Not implemented
-- **Error Codes**: Not implemented
-- **Status**: ❌ Not Implemented
-
-### 4. Reset Password
-- **Endpoint**: `POST /api/auth/password/reset`
-- **Description**: Resets the password using OTP
-- **Request Body**: Not implemented
-- **Response Body**: Not implemented
-- **Error Codes**: Not implemented
-- **Status**: ❌ Not Implemented
-
-## Voucher API
-
-### 1. Get Voucher List
-- **Endpoint**: `GET /api/voucher`
-- **Description**: Retrieves a list of all vouchers
-- **Request Body**: None
-- **Response Body**: Not implemented
-- **Error Codes**: Not implemented
-- **Status**: ❌ Not Implemented
-
-### 2. Get Voucher By Code
-- **Endpoint**: `GET /api/voucher/:code`
-- **Description**: Retrieves details of a specific voucher by its code
-- **Request Parameters**:
-  - code: Voucher Code
-- **Response Body**: Not implemented
-- **Error Codes**: Not implemented
-- **Status**: ❌ Not Implemented
+- **Response Body**:
+  ```json
+  {
+    "message": "Order deleted successfully"
+  }
+  ```
+- **Error Codes**:
+  - 500: Error deleting order
+- **Status**: ✅ Implemented
 
 ## Food API
 
@@ -587,33 +599,244 @@ db.query(....)
 - **Endpoint**: `GET /api/food`
 - **Description**: Retrieves a list of all food items
 - **Request Body**: None
-- **Response Body**: Not implemented
-- **Error Codes**: Not implemented
-- **Status**: ❌ Not Implemented
+- **Response Body**:
+  ```json
+  [
+    {
+      "FoodID": "food_id",
+      "Name": "Food Name",
+      "Description": "Food Description",
+      "Price": 50.00,
+      "Category": "Popcorn",
+      "ImageURL": "url_to_image"
+    },
+    ...
+  ]
+  ```
+- **Error Codes**:
+  - 500: Error retrieving food
+- **Status**: ✅ Implemented
 
-### 2. Get Food By ID
-- **Endpoint**: `GET /api/food/:foodId`
+### 2. Get Popcorn Items
+- **Endpoint**: `GET /api/food/popcorn`
+- **Description**: Retrieves a list of all popcorn items
+- **Request Body**: None
+- **Response Body**: Same format as Get Food List, filtered by Category="Popcorn"
+- **Error Codes**:
+  - 500: Error retrieving popcorn items
+- **Status**: ✅ Implemented
+
+### 3. Get Drink Items
+- **Endpoint**: `GET /api/food/drinks`
+- **Description**: Retrieves a list of all drink items
+- **Request Body**: None
+- **Response Body**: Same format as Get Food List, filtered by Category="Drinks"
+- **Error Codes**:
+  - 500: Error retrieving drink items
+- **Status**: ✅ Implemented
+
+### 4. Get Other Food Items
+- **Endpoint**: `GET /api/food/others`
+- **Description**: Retrieves a list of all other food items
+- **Request Body**: None
+- **Response Body**: Same format as Get Food List, filtered by Category="Others"
+- **Error Codes**:
+  - 500: Error retrieving other items
+- **Status**: ✅ Implemented
+
+### 5. Get Food By ID
+- **Endpoint**: `GET /api/food/:id`
 - **Description**: Retrieves details of a specific food item
 - **Request Parameters**:
-  - foodId: Food ID
-- **Response Body**: Not implemented
-- **Error Codes**: Not implemented
-- **Status**: ❌ Not Implemented
+  - id: Food ID
+- **Response Body**:
+  ```json
+  {
+    "FoodID": "food_id",
+    "Name": "Food Name",
+    "Description": "Food Description",
+    "Price": 50.00,
+    "Category": "Popcorn",
+    "ImageURL": "url_to_image"
+  }
+  ```
+- **Error Codes**:
+  - 404: Food not found
+  - 500: Error retrieving food
+- **Status**: ✅ Implemented
 
-### 3. Create Food
-- **Endpoint**: `POST /api/food`
-- **Description**: Creates a new food item
-- **Request Body**: Not implemented
-- **Response Body**: Not implemented
-- **Error Codes**: Not implemented
-- **Status**: ❌ Not Implemented
+## Authentication API
 
-### 4. Update Food
-- **Endpoint**: `PUT /api/food/:foodId`
-- **Description**: Updates an existing food item
+### 1. Register
+- **Endpoint**: `POST /api/auth/register`
+- **Description**: Registers a new user
+- **Request Body**:
+  ```json
+  {
+    "FullName": "User Name",
+    "DateOfBirth": "1990-01-01",
+    "Email": "user@example.com",
+    "PhoneNumber": "1234567890",
+    "MembershipLevel": "Standard",
+    "Password": "password123"
+  }
+  ```
+- **Response Body**:
+  ```json
+  {
+    "message": "User registered successfully",
+    "token": "jwt_token",
+    "user": {
+      "id": "user_id",
+      "FullName": "User Name",
+      "Email": "user@example.com",
+      "MembershipLevel": "Standard"
+    }
+  }
+  ```
+- **Error Codes**:
+  - 400: Required fields missing
+  - 409: Email already in use
+  - 500: Internal server error
+- **Status**: ✅ Implemented
+
+### 2. Login
+- **Endpoint**: `POST /api/auth/login`
+- **Description**: Logs in a user
+- **Request Body**:
+  ```json
+  {
+    "Email": "user@example.com",
+    "Password": "password123"
+  }
+  ```
+- **Response Body**:
+  ```json
+  {
+    "message": "Login successful",
+    "token": "jwt_token",
+    "user": {
+      "id": "user_id",
+      "FullName": "User Name",
+      "Email": "user@example.com",
+      "MembershipLevel": "Standard"
+    }
+  }
+  ```
+- **Error Codes**:
+  - 400: Email and password are required
+  - 401: Invalid email or password
+  - 500: Internal server error
+- **Status**: ✅ Implemented
+
+### 3. Admin Login
+- **Endpoint**: `POST /api/auth/admin/login`
+- **Description**: Logs in an admin user
+- **Request Body**:
+  ```json
+  {
+    "Username": "admin",
+    "Password": "admin_password"
+  }
+  ```
+- **Response Body**:
+  ```json
+  {
+    "message": "Admin login successful",
+    "token": "jwt_token"
+  }
+  ```
+- **Error Codes**:
+  - 401: Invalid username or password
+  - 500: Internal server error
+- **Status**: ✅ Implemented
+
+### 4. Reset Password
+- **Endpoint**: `POST /api/auth/password/reset`
+- **Description**: Resets the password
+- **Request Body**:
+  ```json
+  {
+    "Email": "user@example.com",
+    "newPassword": "new_password"
+  }
+  ```
+- **Response Body**:
+  ```json
+  {
+    "message": "Password reset successfully"
+  }
+  ```
+- **Error Codes**:
+  - 400: Email and new password are required
+  - 404: User not found
+  - 500: Internal server error
+- **Status**: ✅ Implemented
+
+### 5. Verify Token
+- **Endpoint**: `GET /api/auth/verify`
+- **Description**: Verifies a JWT token and returns user info
+- **Request Headers**:
+  - Authorization: Bearer [jwt_token]
+- **Response Body**:
+  ```json
+  {
+    "message": "User verified",
+    "user": {
+      "id": "user_id",
+      "FullName": "User Name",
+      "Email": "user@example.com",
+      "MembershipLevel": "Standard"
+    }
+  }
+  ```
+- **Error Codes**:
+  - 401: No token provided or Unauthorized
+  - 500: Internal server error
+- **Status**: ✅ Implemented
+
+## Voucher API
+
+### 1. Get All Vouchers
+- **Endpoint**: `GET /api/vouchers`
+- **Description**: Retrieves a list of all vouchers
+- **Request Body**: None
+- **Response Body**:
+  ```json
+  [
+    {
+      "VoucherID": "voucher_id",
+      "Code": "SAVE10",
+      "Description": "10% off your order",
+      "DiscountValue": 10.00,
+      "MinPurchaseAmount": 50.00,
+      "ExpiryDate": "2023-12-31",
+      "IsActive": true
+    },
+    ...
+  ]
+  ```
+- **Error Codes**:
+  - 500: Error retrieving vouchers
+- **Status**: ✅ Implemented
+
+### 2. Get Voucher By Code
+- **Endpoint**: `GET /api/vouchers/:code`
+- **Description**: Retrieves details of a specific voucher by its code
 - **Request Parameters**:
-  - foodId: Food ID
-- **Request Body**: Not implemented
-- **Response Body**: Not implemented
-- **Error Codes**: Not implemented
-- **Status**: ❌ Not Implemented
+  - code: Voucher Code
+- **Response Body**:
+  ```json
+  {
+    "VoucherID": "voucher_id",
+    "Code": "SAVE10",
+    "Description": "10% off your order",
+    "DiscountValue": 10.00,
+    "MinPurchaseAmount": 50.00,
+    "ExpiryDate": "2023-12-31",
+    "IsActive": true
+  }
+  ```
+- **Error Codes**:
+  - 500: Error retrieving voucher
+- **Status**: ✅ Implemented
