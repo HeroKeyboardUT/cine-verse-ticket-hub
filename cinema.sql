@@ -2,7 +2,7 @@
 CREATE DATABASE IF NOT EXISTS cinemasystem;
 USE cinemasystem;
 
-DROP database cinemasystem;
+
 CREATE TABLE CINEMA (
     CinemaID CHAR(6) PRIMARY KEY,
     Name VARCHAR(100) NOT NULL,
@@ -512,6 +512,170 @@ END//
 
 DELIMITER ;
 
+DELIMITER //
+-- Trigger áp dụng voucher cho đơn hàng
+CREATE TRIGGER after_order_booked
+BEFORE UPDATE ON ORDERS
+FOR EACH ROW
+BEGIN
+-- Biến chính
+    DECLARE discount_amount DECIMAL(10,2);
+    DECLARE discount_type   VARCHAR(20);
+    DECLARE total_price     DECIMAL(10,2);
+    DECLARE customer_spent   DECIMAL(10,2);
+    DECLARE valid            BOOLEAN DEFAULT TRUE;
+    DECLARE max_discount     DECIMAL(10,2) DEFAULT NULL;
+
+    -- Biến cho cursor
+    DECLARE cType   VARCHAR(20);
+    DECLARE cBelow  DECIMAL(10,2);
+    DECLARE cAbove  DECIMAL(10,2);
+    DECLARE done    INT DEFAULT 0;
+
+    -- Cursor lấy tất cả constraint
+    DECLARE cur_constraints CURSOR FOR
+      SELECT `Type`, `Below`, `Above`
+      FROM VOUCHER_CONSTRAINT
+      WHERE VoucherID = NEW.VoucherID;
+
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1;
+
+  -- Chỉ chạy khi đổi từ Processing sang Booked và có VoucherID
+  IF OLD.Status = 'Processing'
+     AND NEW.Status = 'Booked'
+     AND NEW.VoucherID IS NOT NULL THEN
+
+    -- 1. Lấy thông tin voucher và kiểm tra active/expiry
+    SELECT v.DiscountAmount, v.DiscountType
+    INTO discount_amount, discount_type
+    FROM VOUCHER v
+    WHERE v.VoucherID = NEW.VoucherID
+      AND v.IsActive = TRUE
+      AND v.ExpirationDate >= CURRENT_DATE();
+    IF discount_amount IS NULL THEN
+      SIGNAL SQLSTATE '45000'
+      SET MESSAGE_TEXT = 'Voucher không tồn tại hoặc hết hạn.';
+    END IF;
+
+    -- 2. Lấy tổng chi tiêu của khách (cho TotalSpent)
+    SELECT TotalSpent
+    INTO customer_spent
+    FROM CUSTOMER
+    WHERE CustomerID = NEW.CustomerID;
+
+    -- 3. Duyệt từng constraint
+    OPEN cur_constraints;
+    constraint_loop: LOOP
+      FETCH cur_constraints INTO cType, cBelow, cAbove;
+      IF done = 1 THEN
+        LEAVE constraint_loop;
+      END IF;
+
+      IF cType = 'TotalOrderPrice' THEN
+        IF NOT ((cBelow IS NULL OR NEW.TotalPrice > cBelow)
+             AND (cAbove IS NULL OR NEW.TotalPrice < cAbove)) THEN
+          SET valid = FALSE;
+          LEAVE constraint_loop;
+        END IF;
+
+      ELSEIF cType = 'TotalSpent' THEN
+        IF NOT (cBelow IS NULL OR customer_spent > cBelow) THEN
+          SET valid = FALSE;
+          LEAVE constraint_loop;
+        END IF;
+
+      ELSEIF cType = 'MaxValue' THEN
+        -- Giữ giá trị nhỏ nhất
+        IF max_discount IS NULL OR cAbove < max_discount THEN
+          SET max_discount = cAbove;
+        END IF;
+      END IF;
+    END LOOP;
+    CLOSE cur_constraints;
+
+    -- 4. Nếu không hợp lệ, abort
+    IF NOT valid THEN
+      SIGNAL SQLSTATE '45000'
+      SET MESSAGE_TEXT = 'Không thoả điều kiện sử dụng voucher.';
+    END IF;
+
+    -- 5. Tính discount_amount theo type
+    IF discount_type = 'Percentage' THEN
+      SET discount_amount = NEW.TotalPrice * discount_amount / 100;
+    END IF;
+
+    -- 6. Áp giới hạn MaxValue
+    IF max_discount IS NOT NULL THEN
+      SET discount_amount = LEAST(discount_amount, max_discount);
+    END IF;
+
+    -- 7. Cập nhật TotalPrice (không âm)
+    SET NEW.TotalPrice = GREATEST(0, NEW.TotalPrice - discount_amount);
+  END IF;
+END;
+//
+
+DELIMITER ;
+
+
+
+-- Procedure
+DELIMITER //
+
+CREATE PROCEDURE InsertFoodAndDrink(
+    IN p_type ENUM('POPCORN', 'DRINK', 'OTHERS'),
+    IN p_name VARCHAR(50),
+    IN p_stock_quantity INT,
+    IN p_is_available BOOLEAN,
+    IN p_price DECIMAL(10,2),
+    IN p_flavor VARCHAR(100),
+    IN p_size ENUM('Small', 'Medium', 'Large'),
+    OUT p_item_id CHAR(6)
+)
+BEGIN
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION 
+    BEGIN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Lỗi khi thêm mặt hàng. Vui lòng kiểm tra dữ liệu đầu vào.';
+    END;
+
+    IF p_type IS NULL OR p_name IS NULL OR p_stock_quantity < 0 OR p_price < 0 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Dữ liệu đầu vào không hợp lệ.';
+    END IF;
+
+    IF p_type = 'POPCORN' AND p_flavor IS NULL THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Hương vị là bắt buộc đối với bắp rang.';
+    END IF;
+
+    IF (p_type = 'POPCORN' OR p_type = 'DRINK') AND p_size IS NULL THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Kích thước là bắt buộc đối với bắp rang hoặc đồ uống.';
+    END IF;
+
+    START TRANSACTION;
+
+    INSERT INTO FOOD_AND_DRINK (Type, Name, StockQuantity, IsAvailable, Price)
+    VALUES (p_type, p_name, p_stock_quantity, p_is_available, p_price);
+
+    SELECT ItemID INTO p_item_id
+    FROM FOOD_AND_DRINK    WHERE ItemID = (SELECT CONCAT('FAD', LPAD(Counter, 3, '0')) 
+    FROM ID_COUNTER WHERE Prefix = 'FAD');
+
+    IF p_type = 'POPCORN' THEN
+        INSERT INTO POPCORN (ItemID, Flavor, Size)
+        VALUES (p_item_id, p_flavor, p_size);
+    ELSEIF p_type = 'DRINK' THEN
+        INSERT INTO DRINK (ItemID, Size)
+        VALUES (p_item_id, p_size);
+    END IF;
+
+    COMMIT;
+END //
+
+DELIMITER ;
+
 
 -- INSERT --
 SET SQL_SAFE_UPDATES = 0;
@@ -839,65 +1003,52 @@ INSERT INTO SHOWTIME (CinemaID, RoomNumber, MovieID, StartTime, Duration, Format
 ('CIN012', 1, 'MOV001', '2025-04-28 17:00:00', 181, '2D', TRUE, FALSE),
 ('CIN012', 2, 'MOV002', '2025-04-28 19:00:00', 166, '4DX', TRUE, FALSE);
 
-INSERT INTO VOUCHER (Code, Description, DiscountAmount, DiscountType, IssueDate, ExpirationDate, MaxUsage, UsedCount, IsActive) VALUES
-('SAVE10', '10% off on tickets', 10.00, 'Percentage', '2025-04-01', '2025-12-31', 100, 0, TRUE),
-('FREEPOP', 'Free popcorn with ticket', 50000.00, 'Fixed', '2025-04-01', '2025-06-30', 50, 0, TRUE),
-('NEWUSER15', '15% off for new users', 15.00, 'Percentage', '2025-04-01', '2025-12-31', 500, 0, TRUE),
-('WEEKEND50', '50000 VND off on weekends', 50000.00, 'Fixed', '2025-04-10', '2025-10-31', 100, 0, TRUE),
-('FESTIVAL25', '25% off for festival season', 25.00, 'Percentage', '2025-11-01', '2026-01-31', 300, 0, TRUE),
-('PREMIUM100', '100000 VND off for Premium members', 100000.00, 'Fixed', '2025-05-01', '2025-11-30', 50, 0, TRUE),
-('FIRST20', '20% off for first order', 20.00, 'Percentage', '2025-04-15', '2025-12-31', 400, 0, TRUE),
-('MOVIE50', '50000 VND off for movie tickets', 50000.00, 'Fixed', '2025-04-20', '2025-09-30', 200, 0, TRUE),
-('SUMMER30', '30% off for summer season', 30.00, 'Percentage', '2025-06-01', '2025-08-31', 600, 0, TRUE),
-('VIP150', '150000 VND off for VIP members', 150000.00, 'Fixed', '2025-05-10', '2025-12-31', 100, 0, TRUE),
-('FRIENDS10', '10% off for group orders', 10.00, 'Percentage', '2025-04-25', '2025-11-30', 300, 0, TRUE),
-('COMBO75', '75000 VND off for combo orders', 75000.00, 'Fixed', '2025-05-01', '2025-10-31', 150, 0, TRUE),
-('STUDENT20', '20% off for students', 20.00, 'Percentage', '2025-04-01', '2025-12-31', 200, 0, TRUE),
-('FAMILY100', '100000 VND off for family pack', 100000.00, 'Fixed', '2025-04-10', '2025-12-31', 100, 0, TRUE);
+-- Insert into VOUCHER
+INSERT INTO VOUCHER (Code, Description, DiscountAmount, DiscountType, IssueDate, ExpirationDate, MaxUsage, UsedCount, IsActive)
+VALUES
+('DISCOUNT10', '10% off on orders over 500,000 VND', 10, 'Percentage', '2025-04-01', '2025-12-31', 100, 0, TRUE),
+('FIXED50', '50,000 VND off on any order', 50000, 'Fixed', '2025-04-01', '2025-12-31', 50, 0, TRUE),
+('LOYALTY20', '20% off for loyal customers who have spent over 1,000,000 VND', 20, 'Percentage', '2025-04-01', '2025-12-31', 200, 0, TRUE),
+('SPECIAL15', '15% off for orders between 300,000 and 1,000,000 VND, max discount 150,000 VND', 15, 'Percentage', '2025-04-01', '2025-12-31', 150, 0, TRUE);
 
-INSERT INTO VOUCHER_CONSTRAINT (VoucherID, Type, Above, Below) VALUES
-('VCH001', 'MinOrder', 150000.00, 1000000.00),
-('VCH002', 'Food', 50000.00, 200000.00),
-('VCH003', 'MinOrder', 100000.00, 500000.00),
-('VCH004', 'MinOrder', 200000.00, 1000000.00),
-('VCH005', 'MinOrder', 250000.00, 2000000.00),
-('VCH006', 'MinOrder', 300000.00, 3000000.00),
-('VCH007', 'MinOrder', 120000.00, 800000.00),
-('VCH008', 'Ticket', 90000.00, 600000.00),
-('VCH009', 'MinOrder', 200000.00, 1500000.00),
-('VCH010', 'MinOrder', 350000.00, 2500000.00),
-('VCH011', 'MinOrder', 110000.00, 700000.00),
-('VCH012', 'Food', 100000.00, 500000.00),
-('VCH013', 'MinOrder', 130000.00, 900000.00),
-('VCH014', 'MinOrder', 400000.00, 3000000.00);
+-- Insert into VOUCHER_CONSTRAINT
+INSERT INTO VOUCHER_CONSTRAINT (VoucherID, Type, Above, Below)
+VALUES
+('VCH001', 'TotalOrderPrice', NULL, 500000),
+('VCH001', 'MaxValue', 100000, NULL),
+('VCH002', 'TotalOrderPrice', NULL, 0),
+('VCH003', 'TotalSpent', NULL, 1000000),
+('VCH003', 'TotalOrderPrice', NULL, 200000),
+('VCH004', 'TotalOrderPrice', 1000000, 300000),
+('VCH004', 'MaxValue', 150000, NULL);
 
 select * from CUSTOMER;
 
-INSERT INTO ORDERS (OrderDate, Status, PaymentMethod, VoucherID, CustomerID) VALUES
-('2025-04-23 10:00:00', 'Completed', 'Credit Card', 'VCH001', 'CUS001'),
-('2025-04-23 11:00:00', 'Processing', 'Cash', NULL, 'CUS002'),
-('2025-04-23 12:00:00', 'Completed', 'Mobile App', 'VCH002', 'CUS003'),
-('2025-04-23 13:00:00', 'Completed', 'Credit Card', 'VCH003', 'CUS004'),
-('2025-04-24 09:00:00', 'Completed', 'Cash', 'VCH004', 'CUS005'),
-('2025-04-24 10:30:00', 'Processing', 'Mobile App', NULL, 'CUS006'),
-('2025-04-24 12:00:00', 'Completed', 'Credit Card', 'VCH005', 'CUS007'),
-('2025-04-24 14:00:00', 'Completed', 'Cash', 'VCH006', 'CUS008'),
-('2025-04-24 16:00:00', 'Processing', 'Mobile App', NULL, 'CUS009'),
-('2025-04-24 18:00:00', 'Completed', 'Credit Card', 'VCH007', 'CUS010'),
-('2025-04-25 09:00:00', 'Completed', 'Cash', 'VCH008', 'CUS011'),
-('2025-04-25 11:00:00', 'Processing', 'Mobile App', NULL, 'CUS012'),
-('2025-04-25 13:00:00', 'Completed', 'Credit Card', 'VCH009', 'CUS013'),
-('2025-04-25 15:00:00', 'Completed', 'Cash', 'VCH010', 'CUS014'),
-('2025-04-25 17:00:00', 'Processing', 'Mobile App', NULL, 'CUS015'),
-('2025-04-25 19:00:00', 'Completed', 'Credit Card', 'VCH011', 'CUS016'),
-('2025-04-26 09:00:00', 'Completed', 'Cash', 'VCH012', 'CUS017'),
-('2025-04-26 11:00:00', 'Processing', 'Mobile App', NULL, 'CUS018'),
-('2025-04-26 13:00:00', 'Completed', 'Credit Card', 'VCH013', 'CUS019'),
-('2025-04-26 15:00:00', 'Completed', 'Cash', 'VCH014', 'CUS020'),
-('2025-04-26 17:00:00', 'Processing', 'Mobile App', NULL, 'CUS021'),
-('2025-04-26 19:00:00', 'Completed', 'Credit Card', 'VCH001', 'CUS022'),
-('2025-04-27 09:00:00', 'Completed', 'Cash', 'VCH002', 'CUS023'),
-('2025-04-27 11:00:00', 'Processing', 'Mobile App', NULL, 'CUS024');
+-- INSERT INTO ORDERS (OrderDate, Status, PaymentMethod, VoucherID, CustomerID) VALUES
+-- ('2025-04-23 10:00:00', 'Completed', 'Credit Card', 'VCH001', 'CUS001'),
+-- ('2025-04-23 11:00:00', 'Processing', 'Cash', NULL, 'CUS002'),
+-- ('2025-04-23 12:00:00', 'Completed', 'Mobile App', 'VCH002', 'CUS003'),
+-- ('2025-04-23 13:00:00', 'Completed', 'Credit Card', 'VCH003', 'CUS004'),
+-- ('2025-04-24 09:00:00', 'Completed', 'Cash', 'VCH004', 'CUS005'),
+-- ('2025-04-24 10:30:00', 'Processing', 'Mobile App', NULL, 'CUS006'),
+-- ('2025-04-24 12:00:00', 'Completed', 'Credit Card', 'VCH005', 'CUS007'),
+-- ('2025-04-24 14:00:00', 'Completed', 'Cash', 'VCH006', 'CUS008'),
+-- ('2025-04-24 16:00:00', 'Processing', 'Mobile App', NULL, 'CUS009'),
+-- ('2025-04-24 18:00:00', 'Completed', 'Credit Card', 'VCH007', 'CUS010'),
+-- ('2025-04-25 09:00:00', 'Completed', 'Cash', 'VCH008', 'CUS011'),
+-- ('2025-04-25 11:00:00', 'Processing', 'Mobile App', NULL, 'CUS012'),
+-- ('2025-04-25 13:00:00', 'Completed', 'Credit Card', 'VCH009', 'CUS013'),
+-- ('2025-04-25 15:00:00', 'Completed', 'Cash', 'VCH010', 'CUS014'),
+-- ('2025-04-25 17:00:00', 'Processing', 'Mobile App', NULL, 'CUS015'),
+-- ('2025-04-25 19:00:00', 'Completed', 'Credit Card', 'VCH011', 'CUS016'),
+-- ('2025-04-26 09:00:00', 'Completed', 'Cash', 'VCH012', 'CUS017'),
+-- ('2025-04-26 11:00:00', 'Processing', 'Mobile App', NULL, 'CUS018'),
+-- ('2025-04-26 13:00:00', 'Completed', 'Credit Card', 'VCH013', 'CUS019'),
+-- ('2025-04-26 15:00:00', 'Completed', 'Cash', 'VCH014', 'CUS020'),
+-- ('2025-04-26 17:00:00', 'Processing', 'Mobile App', NULL, 'CUS021'),
+-- ('2025-04-26 19:00:00', 'Completed', 'Credit Card', 'VCH001', 'CUS022'),
+-- ('2025-04-27 09:00:00', 'Completed', 'Cash', 'VCH002', 'CUS023'),
+-- ('2025-04-27 11:00:00', 'Processing', 'Mobile App', NULL, 'CUS024');
 
 -- INSERT INTO SHOWTIME_SEAT (ShowTimeID, SeatNumber, OrderID, Price) VALUES
 -- -- SHT001: CIN001, Room 1, Movie: Avengers: Endgame
@@ -1005,32 +1156,17 @@ INSERT INTO MOVIE_GENRE (MovieID, Genre) VALUES
 ('MOV013', 'Biography'), ('MOV013', 'Drama'),
 ('MOV014', 'Animation'), ('MOV014', 'Adventure');
 
-INSERT INTO FOOD_AND_DRINK (Type, Name, StockQuantity, IsAvailable, Price) VALUES
-('POPCORN', 'Salted Popcorn', 100, TRUE, 50000.00),
-('POPCORN', 'Caramel Popcorn', 80, TRUE, 60000.00),
-('DRINK', 'Cola', 200, TRUE, 30000.00),
-('DRINK', 'Pepsi', 150, TRUE, 30000.00);
-
-INSERT INTO FOOD_DRINK_ORDER (OrderID, ItemID, Quantity) VALUES
-('ORD002', 'FAD001', 2),
-('ORD003', 'FAD003', 1),
-('ORD007', 'FAD002', 1),
-('ORD012', 'FAD004', 2);
-
-INSERT INTO POPCORN (ItemID, Flavor, Size) VALUES
-('FAD001', 'Salted', 'Medium'),
-('FAD002', 'Caramel', 'Large');
-
-INSERT INTO DRINK (ItemID, Size) VALUES
-('FAD003', 'Medium'),
-('FAD004', 'Large');
-
-
-
-
-
-SELECT * FROM SHOWTIME_SEAT;
-
+-- Tạo dữ liệu mẫu cho FOOD_AND_DRINK
+-- Thêm Salted Popcorn
+CALL InsertFoodAndDrink('POPCORN', 'Salted Popcorn', 100, TRUE, 50000.00, 'Salted', 'Medium', @item_id1);
+-- Thêm Caramel Popcorn
+CALL InsertFoodAndDrink('POPCORN', 'Caramel Popcorn', 80, TRUE, 60000.00, 'Caramel', 'Large', @item_id2);
+-- Thêm Cola
+CALL InsertFoodAndDrink('DRINK', 'Cola', 200, TRUE, 30000.00, NULL, 'Medium', @item_id3);
+-- Thêm Pepsi
+CALL InsertFoodAndDrink('DRINK', 'Pepsi', 150, TRUE, 30000.00, NULL, 'Large', @item_id4);
+-- Thêm Hamburger
+CALL InsertFoodAndDrink('OTHERS', 'Hamburger', 50, TRUE, 70000.00, NULL, NULL, @item_id5);
 
 
 -- ------------------------------------------------
@@ -1055,73 +1191,4 @@ DELETE FROM CINEMA_PHONE;
 DELETE FROM CINEMA;
 DELETE FROM ID_COUNTER;
 -- ----------------------------------------------------- 
-
-
-
-SELECT 
-        o.OrderID,
-        o.OrderDate,
-        o.Status,
-        o.TotalPrice,
-        o.PaymentMethod,
-        o.isTicket,
-        o.isFood,
-        
-        s.SeatNumber,
-        sh.StartTime,
-        sh.EndTime,
-        sh.Format,
-        
-        m.Title AS MovieTitle,
-        
-        r.RoomNumber,
-        r.Type AS RoomType,
-        
-        c.Name AS CinemaName,
-        c.Location AS CinemaLocation
-
-      FROM ORDERS o
-      LEFT JOIN SHOWTIME_SEAT s ON o.OrderID = s.OrderID
-      LEFT JOIN SHOWTIME sh ON s.ShowTimeID = sh.ShowTimeID
-      LEFT JOIN MOVIE m ON sh.MovieID = m.MovieID
-      LEFT JOIN ROOM r ON sh.CinemaID = r.CinemaID AND sh.RoomNumber = r.RoomNumber
-      LEFT JOIN CINEMA c ON r.CinemaID = c.CinemaID
-
-      WHERE o.CustomerID = 'CUS001'
-      ORDER BY o.OrderDate DESC;
-
-SELECT 
-        f.ItemID, f.Name, f.Price, f.StockQuantity, f.IsAvailable, 
-        p.Flavor, p.Size
-      FROM FOOD_AND_DRINK f
-      JOIN POPCORN p ON f.ItemID = p.ItemID;
-
-SELECT * FROM FOOD_AND_DRINK WHERE ItemID = 'FAD001';
-
-
-SELECT 
-      S.SeatNumber AS number,
-      S.RoomNumber AS room,
-      S.CinemaID AS cinema,
-      S.SeatType,
-      IF(SS.OrderID IS NULL, 'available', 'occupied') AS status,
-      
-      -- Tính giá dựa trên loại ghế và định dạng suất chiếu
-      ROUND(
-          CASE 
-              WHEN S.SeatType = 'standard' THEN 90000
-              WHEN S.SeatType = 'vip' THEN 120000
-              ELSE 100000  -- fallback
-          END 
-          * 
-          CASE 
-              WHEN ST.Format IN ('4DX', 'IMAX') THEN 1.5
-              ELSE 1
-          END
-      , 0) AS Price
-
-      FROM SEAT S
-      JOIN SHOWTIME ST ON S.CinemaID = ST.CinemaID AND S.RoomNumber = ST.RoomNumber
-      LEFT JOIN SHOWTIME_SEAT SS 
-          ON S.SeatNumber = SS.SeatNumber AND ST.ShowTimeID = SS.ShowTimeID
-      WHERE ST.ShowTimeID = 'SHT001';
+DROP database cinemasystem;

@@ -13,6 +13,7 @@ export interface FoodItem {
 export const fetchFoodItems = async (): Promise<{
   popcorn: FoodItem[];
   drinks: FoodItem[];
+  others: FoodItem[];
 }> => {
   try {
     // Fetch popcorn items
@@ -26,10 +27,15 @@ export const fetchFoodItems = async (): Promise<{
     if (!drinkResponse.ok) {
       throw new Error(`Failed to fetch drinks: ${drinkResponse.status}`);
     }
+    // Fetch others items
+    const othersResponse = await fetch(`${API_FOOD.GET_ALL_FOODS}/others`);
+    if (!othersResponse.ok) {
+      throw new Error(`Failed to fetch others: ${othersResponse.status}`);
+    }
 
     const popcornData = await popcornResponse.json();
     const drinkData = await drinkResponse.json();
-
+    const othersData = await othersResponse.json();
     return {
       popcorn: popcornData.map((item: any) => ({
         id: item.ItemID,
@@ -48,9 +54,17 @@ export const fetchFoodItems = async (): Promise<{
         isAvailable: item.IsAvailable,
         size: item.Size,
       })),
+      others: othersData.map((item: any) => ({
+        id: item.ItemID,
+        name: item.Name,
+        price: item.Price,
+        stock: item.StockQuantity,
+        isAvailable: item.IsAvailable,
+        size: item.Size,
+      })),
     };
   } catch (error) {
     console.error("Error fetching food items:", error);
-    return { popcorn: [], drinks: [] };
+    return { popcorn: [], drinks: [], others: [] };
   }
 };

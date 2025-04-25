@@ -35,6 +35,17 @@ class FoodController {
       });
     }
   }
+  async getOtherItems(req, res) {
+    try {
+      const otherItems = await FoodModel.getOtherItems();
+      res.status(200).json(otherItems);
+    } catch (error) {
+      res.status(500).json({
+        message: "Error retrieving other items",
+        error: error.message,
+      });
+    }
+  }
 
   async getFoodById(req, res) {
     try {

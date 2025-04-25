@@ -28,6 +28,7 @@ const SeatBooking = () => {
   const [seats, setSeats] = useState<Seat[]>([]);
   const [popcornItems, setPopcornItems] = useState<FoodItem[]>([]);
   const [drinkItems, setDrinkItems] = useState<FoodItem[]>([]);
+  const [otherItems, setOtherItems] = useState<FoodItem[]>([]);
   const [showtime, setShowtime] = useState<Showtime | null>(null);
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
   const [vouchersLoading, setVouchersLoading] = useState(true);
@@ -110,6 +111,7 @@ const SeatBooking = () => {
           const fetchedFoodItems = await fetchFoodItems();
           setPopcornItems(fetchedFoodItems.popcorn);
           setDrinkItems(fetchedFoodItems.drinks);
+          setOtherItems(fetchedFoodItems.others);
         } catch (foodError) {
           console.error("Error fetching food items:", foodError);
           // Don't fail the whole page if just food items fail
@@ -379,6 +381,7 @@ const SeatBooking = () => {
           <FoodSelector
             popcornItems={popcornItems}
             drinkItems={drinkItems}
+            othersItems={otherItems}
             selectedFood={selectedFood}
             onFoodSelect={handleFoodSelection}
           />
