@@ -163,7 +163,7 @@ function Orders() {
         <OrderDialog
           isOpen={isDialogOpen}
           onOpenChange={setIsDialogOpen}
-          orderID={currentOrder.OrderID}
+          order={currentOrder? currentOrder:null}
           onSave={handleSaveOrder}
         />
     </div>

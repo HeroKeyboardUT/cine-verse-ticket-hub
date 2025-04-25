@@ -78,6 +78,29 @@ class OrdersModel {
   async deleteOrder(id) {
     await pool.query(`DELETE FROM ORDERS WHERE OrderID = ?`, [id]);
   }
+
+  async getFoodByOrderId(orderId) {
+    const [rows] = await pool.query(
+      `SELECT * FROM FOOD_DRINK_ORDER WHERE OrderID = ?`,
+      [orderId]
+    );
+    return rows;
+  }
+
+  async getTicketByOrderId(orderId) {
+    const [rows] = await pool.query(
+      `SELECT * FROM SHOWTIME_SEAT WHERE OrderID = ?`,
+      [orderId]
+    );
+    return rows;
+  }
+  
+  async updateOrderStatus(orderId, status) {
+    await pool.query(
+      `UPDATE ORDERS SET Status = ? WHERE OrderID = ?`,
+      [status, orderId]
+    );
+  }
 }
 
 export default new OrdersModel();
