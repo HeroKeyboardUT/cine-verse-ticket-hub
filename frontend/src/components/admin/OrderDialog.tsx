@@ -33,14 +33,12 @@ interface OrderDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   order: Order | null;
-  onSave?: (order: Order) => void;
 }
 
 const OrderDialog: React.FC<OrderDialogProps> = ({
   isOpen,
   onOpenChange,
   order,
-  onSave,
 }) => {
   if (!order) return null;
 
@@ -98,8 +96,6 @@ const OrderDialog: React.FC<OrderDialogProps> = ({
     setIsUpdating(true);
     try {
       await updateOrderStatus(order.OrderID, newStatus);
-      const updatedOrder = { ...order, Status: newStatus };
-      onSave?.(updatedOrder);
       toast({
         title: "Success",
         description: `Order status updated to ${newStatus}.`,
@@ -211,7 +207,7 @@ const OrderDialog: React.FC<OrderDialogProps> = ({
                 Total Price:
               </Label>
               <div className="col-span-3">
-                {order.TotalPrice.toLocaleString()} VND
+                {order.TotalPrice? order.TotalPrice.toLocaleString() : 0} VND
               </div>
             </div>
 

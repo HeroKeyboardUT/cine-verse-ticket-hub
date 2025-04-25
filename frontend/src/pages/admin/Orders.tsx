@@ -61,14 +61,7 @@ function Orders() {
         );
         setFilteredOrders(filtered);
       }, [searchTerm, ordersList]);
-    
-      const handleSaveOrder = async () => {
-    
-      };
-    
-      const handleDeleteOrder = async (id: string) => {
-        
-      };
+
     
       if (loading)
         return <div className="text-center py-8">Loading showtimes...</div>;
@@ -140,15 +133,6 @@ function Orders() {
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() =>
-                              handleDeleteOrder(order.OrderID)
-                            }
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -164,7 +148,6 @@ function Orders() {
           isOpen={isDialogOpen}
           onOpenChange={setIsDialogOpen}
           order={currentOrder? currentOrder:null}
-          onSave={handleSaveOrder}
         />
     </div>
   );
