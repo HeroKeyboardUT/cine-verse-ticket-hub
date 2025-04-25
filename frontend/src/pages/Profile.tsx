@@ -12,6 +12,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
+  User,
   CreditCard,
   Ticket,
   Calendar,
@@ -34,7 +35,7 @@ import { UserStats } from "@/components/profile/UserStats";
 import { ProfileSkeleton } from "@/components/profile/ProfileSkeleton";
 import { EditProfileDialog } from "@/components/profile/EditProfileDialog";
 import { fetchUserOrders, Order } from "@/lib/data_order";
-import { User, fetchUserById } from "@/lib/data_user";
+import { fetchUserById } from "@/lib/data_user";
 import { format } from "date-fns";
 
 const Profile = () => {
@@ -162,7 +163,7 @@ const Profile = () => {
                 <div className="w-full mt-4 space-y-2 text-sm">
                   <div className="flex items-center gap-2">
                     <Mail className="h-4 w-4 text-muted-foreground" />
-                    <span>{user.Email}</span>
+                    <span>{user.email}</span>
                   </div>
                   {user.PhoneNumber && (
                     <div className="flex items-center gap-2">
@@ -287,7 +288,9 @@ const Profile = () => {
                     <div className="flex items-start space-x-3 p-3 rounded-lg hover:bg-muted transition">
                       <div className="h-20 w-14 rounded bg-muted flex-shrink-0 overflow-hidden">
                         <img
-                          src={orders[0].PosterURL}
+                          src={
+                            "https://upload.wikimedia.org/wikipedia/vi/thumb/4/42/%C3%81p_ph%C3%ADch_phim_M%E1%BA%AFt_bi%E1%BA%BFc.jpg/330px-%C3%81p_ph%C3%ADch_phim_M%E1%BA%AFt_bi%E1%BA%BFc.jpg"
+                          }
                           alt="Movie poster"
                           className="h-full w-full object-cover"
                         />
