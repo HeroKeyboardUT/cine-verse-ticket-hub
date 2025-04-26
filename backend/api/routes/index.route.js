@@ -7,6 +7,7 @@ import orderRoute from "./orders.route.js";
 import FoodRoute from "./food.route.js";
 import authRouter from "./auth.route.js";
 import voucherRoute from "./voucher.route.js";
+import reportRoute from "./report.route.js";
 
 function routes(app) {
   // API Routes
@@ -22,6 +23,7 @@ function routes(app) {
   app.use("/api/foods", FoodRoute);
   app.use("/api/auth", authRouter);
   app.use("/api/voucher", voucherRoute);
+  app.use("/api/reports", reportRoute);
 }
 
 export default routes;

@@ -1,8 +1,16 @@
+-- -- Tạo user sManager
+-- CREATE USER 'sManager'@'localhost' IDENTIFIED BY '123456';
+-- GRANT ALL PRIVILEGES ON *.* TO 'sManager'@'localhost' WITH GRANT OPTION;
+-- FLUSH PRIVILEGES;
+
+
 -- Tạo database
 CREATE DATABASE IF NOT EXISTS cinemasystem;
 USE cinemasystem;
 
 
+
+-- CREATE
 CREATE TABLE CINEMA (
     CinemaID CHAR(6) PRIMARY KEY,
     Name VARCHAR(100) NOT NULL,
@@ -480,7 +488,6 @@ END//
 
 DELIMITER ;
 
--- Mới tìm thấy
 DELIMITER //
 
 CREATE TRIGGER before_showtime_seat_update
@@ -698,6 +705,72 @@ BEGIN
 
     COMMIT;
 END //
+
+CREATE PROCEDURE GetCinemaStatistics(
+  OUT p_TotalRevenue DECIMAL(12,2),
+  OUT p_TotalTickets INT,
+  OUT p_TotalMovies INT
+)
+BEGIN
+  -- Tổng doanh thu
+  SELECT COALESCE(SUM(TotalPrice), 0)
+  INTO p_TotalRevenue
+  FROM ORDERS;
+
+  -- Tổng số vé bán
+  SELECT COUNT(*)
+  INTO p_TotalTickets
+  FROM SHOWTIME_SEAT
+  WHERE OrderID IS NOT NULL;
+
+  -- Tổng số phim đang chiếu (có showtime trong tương lai hoặc isShow = true)
+  SELECT COUNT(DISTINCT m.MovieID)
+  INTO p_TotalMovies
+  FROM MOVIE m
+  JOIN SHOWTIME s ON m.MovieID = s.MovieID
+  WHERE s.StartTime >= CURRENT_DATE
+     OR m.isShow = TRUE;
+END;
+//
+
+-- Doanh thu theo tháng
+CREATE PROCEDURE RevenueByMonth()
+BEGIN
+  SELECT DATE_FORMAT(OrderDate, '%Y-%m') AS Month, SUM(TotalPrice) AS MonthlyRevenue
+  FROM ORDERS
+  GROUP BY Month
+  ORDER BY Month;
+END;//
+
+-- Doanh thu theo ngày
+CREATE PROCEDURE RevenueByDay()
+BEGIN
+  SELECT DATE(OrderDate) AS Date, SUM(TotalPrice) AS DailyRevenue
+  FROM ORDERS
+  GROUP BY Date
+  ORDER BY Date;
+END;//
+
+-- Doanh thu theo phim
+CREATE PROCEDURE RevenueByMovie()
+BEGIN
+  SELECT m.Title, SUM(s.Price) AS MovieRevenue
+  FROM SHOWTIME_SEAT s 
+  JOIN SHOWTIME st ON s.ShowTimeID = st.ShowTimeID
+  JOIN MOVIE m ON st.MovieID = m.MovieID
+  WHERE s.OrderID IS NOT NULL
+  GROUP BY m.Title
+  ORDER BY MovieRevenue DESC;
+END;//
+
+-- Top khách hàng chi tiêu nhiều nhất
+CREATE PROCEDURE TopCustomers(IN limit_count INT)
+BEGIN
+  SELECT CustomerID, FullName, TotalSpent, TotalOrders
+  FROM CUSTOMER
+  ORDER BY TotalSpent DESC
+  LIMIT limit_count;
+END;//
 
 DELIMITER ;
 
@@ -1195,37 +1268,42 @@ CALL InsertFoodAndDrink('OTHERS', 'Hamburger', 50, TRUE, 70000.00, NULL, NULL, @
 
 
 
-select * from ORDERs;
-select * from SHOWTIME_SEAT;
-select * from CUSTOMER;
-select * from FOOD_DRINK_ORDER;
 
 
 
 
 
+-- -- ------------------------------------------------
+-- -- -- Xóa dữ liệu mẫu
+-- DELETE FROM SHOWTIME_SEAT;
+-- DELETE FROM FOOD_DRINK_ORDER;
+-- DELETE FROM ORDERS;
+-- DELETE FROM VOUCHER_CONSTRAINT;
+-- DELETE FROM VOUCHER;
+-- DELETE FROM RATING;
+-- DELETE FROM MOVIE_GENRE;
+-- DELETE FROM SHOWTIME;
+-- DELETE FROM SEAT;
+-- DELETE FROM ROOM;
+-- DELETE FROM CUSTOMER;
+-- DELETE FROM MOVIE;
+-- DELETE FROM SCREEN;
+-- DELETE FROM DRINK;
+-- DELETE FROM POPCORN;
+-- DELETE FROM FOOD_AND_DRINK;
+-- DELETE FROM CINEMA_PHONE;
+-- DELETE FROM CINEMA;
+-- DELETE FROM ID_COUNTER;
+-- DELETE FROM MANAGER;
+-- -- ----------------------------------------------------- 
+-- DROP database cinemasystem;
+-- -- -----------------------------------------------------
 
--- ------------------------------------------------
--- -- Xóa dữ liệu mẫu
-DELETE FROM SHOWTIME_SEAT;
-DELETE FROM FOOD_DRINK_ORDER;
-DELETE FROM ORDERS;
-DELETE FROM VOUCHER_CONSTRAINT;
-DELETE FROM VOUCHER;
-DELETE FROM RATING;
-DELETE FROM MOVIE_GENRE;
-DELETE FROM SHOWTIME;
-DELETE FROM SEAT;
-DELETE FROM ROOM;
-DELETE FROM CUSTOMER;
-DELETE FROM MOVIE;
-DELETE FROM SCREEN;
-DELETE FROM DRINK;
-DELETE FROM POPCORN;
-DELETE FROM FOOD_AND_DRINK;
-DELETE FROM CINEMA_PHONE;
-DELETE FROM CINEMA;
-DELETE FROM ID_COUNTER;
-DELETE FROM MANAGER;
--- ----------------------------------------------------- 
-DROP database cinemasystem;
+CALL GetCinemaStatistics(@tRevenue, @tTickets, @tMovies);
+SELECT 
+@tRevenue AS TotalRevenue,
+@tTickets AS TotalTicket, 
+@tMovies AS TotalMovie;
+
+CALL RevenueByMovie();
+CALL TopCustomers(10);
