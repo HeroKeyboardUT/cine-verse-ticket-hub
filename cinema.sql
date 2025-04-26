@@ -1,12 +1,15 @@
+-- -- Tạo user sManager
+-- CREATE USER 'sManager'@'localhost' IDENTIFIED BY '123456';
+-- GRANT ALL PRIVILEGES ON *.* TO 'sManager'@'localhost' WITH GRANT OPTION;
+-- FLUSH PRIVILEGES;
+
+
 -- Tạo database
 CREATE DATABASE IF NOT EXISTS cinemasystem;
 USE cinemasystem;
 
 
--- Tạo user sManager
-CREATE USER 'sManager'@'localhost' IDENTIFIED BY '123456';
-GRANT ALL PRIVILEGES ON *.* TO 'sManager'@'localhost' WITH GRANT OPTION;
-FLUSH PRIVILEGES;
+
 -- CREATE
 CREATE TABLE CINEMA (
     CinemaID CHAR(6) PRIMARY KEY,
