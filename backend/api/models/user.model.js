@@ -106,7 +106,7 @@ class CustomerModel {
       Email,
       PhoneNumber,
       MembershipLevel,
-      password,
+      Password,
     } = customer;
     if (!FullName || !Email) {
       throw new Error("Thiếu thông tin bắt buộc: FullName, Email");
@@ -123,7 +123,7 @@ class CustomerModel {
           Email,
           PhoneNumber || null,
           MembershipLevel || "Standard",
-          password || null,
+          Password || null,
         ]
       );
     } catch (error) {
