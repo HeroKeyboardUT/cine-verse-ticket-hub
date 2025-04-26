@@ -840,3 +840,185 @@ const result = db.query(....);
 - **Error Codes**:
   - 500: Error retrieving voucher
 - **Status**: ✅ Implemented
+
+## Seat API
+
+### 1. Get All Seats
+- **Endpoint**: `GET /api/seats`
+- **Description**: Retrieves a list of all seats
+- **Request Body**: None
+- **Response Body**:
+  ```json
+  [
+    {
+      "SeatID": "seat_id",
+      "SeatNumber": "A1",
+      "SeatType": "Standard",
+      "Price": 50.00
+    },
+    ...
+  ]
+  ```
+- **Error Codes**:
+  - 500: Internal server error
+- **Status**: ✅ Implemented
+
+### 2. Get Seat By ID
+- **Endpoint**: `GET /api/seats/:id`
+- **Description**: Retrieves details of a specific seat
+- **Request Parameters**:
+  - id: Seat ID
+- **Response Body**:
+  ```json
+  {
+    "SeatID": "seat_id",
+    "SeatNumber": "A1",
+    "SeatType": "Standard",
+    "Price": 50.00
+  }
+  ```
+- **Error Codes**:
+  - 404: Seat not found
+  - 500: Internal server error
+- **Status**: ✅ Implemented
+
+### 3. Get Seats By Showtime ID
+- **Endpoint**: `GET /api/seats/showtime/:id`
+- **Description**: Retrieves all seats for a specific showtime
+- **Request Parameters**:
+  - id: Showtime ID
+- **Response Body**:
+  ```json
+  [
+    {
+      "SeatID": "seat_id",
+      "SeatNumber": "A1",
+      "SeatType": "Standard",
+      "Status": "Available",
+      "Price": 50.00
+    },
+    ...
+  ]
+  ```
+- **Error Codes**:
+  - 500: Internal server error
+- **Status**: ✅ Implemented
+
+### 4. Create Seat
+- **Endpoint**: `POST /api/seats`
+- **Description**: Creates a new seat
+- **Request Body**:
+  ```json
+  {
+    "SeatNumber": "A1",
+    "SeatType": "Standard",
+    "Price": 50.00
+  }
+  ```
+- **Response Body**:
+  ```json
+  {
+    "message": "Seat created successfully"
+  }
+  ```
+- **Error Codes**:
+  - 500: Internal server error
+- **Status**: ✅ Implemented
+
+## Report API
+
+### 1. Get Statistics Report
+- **Endpoint**: `GET /api/reports/statistics`
+- **Description**: Retrieves general statistics about the system
+- **Request Body**: None
+- **Response Body**:
+  ```json
+  {
+    "totalCustomers": 100,
+    "totalMovies": 50,
+    "totalOrders": 200,
+    "totalRevenue": 10000.00
+  }
+  ```
+- **Error Codes**:
+  - 500: Error fetching statistic report
+- **Status**: ✅ Implemented
+
+### 2. Get Monthly Revenue Report
+- **Endpoint**: `GET /api/reports/revenue/monthly`
+- **Description**: Retrieves monthly revenue data
+- **Request Body**: None
+- **Response Body**:
+  ```json
+  [
+    {
+      "month": "January",
+      "year": 2025,
+      "revenue": 1500.00
+    },
+    ...
+  ]
+  ```
+- **Error Codes**:
+  - 500: Error fetching monthly revenue report
+- **Status**: ✅ Implemented
+
+### 3. Get Daily Revenue Report
+- **Endpoint**: `GET /api/reports/revenue/daily`
+- **Description**: Retrieves daily revenue data
+- **Request Body**: None
+- **Response Body**:
+  ```json
+  [
+    {
+      "date": "2025-04-25",
+      "revenue": 500.00
+    },
+    ...
+  ]
+  ```
+- **Error Codes**:
+  - 500: Error fetching daily revenue report
+- **Status**: ✅ Implemented
+
+### 4. Get Movie Revenue Report
+- **Endpoint**: `GET /api/reports/revenue/movies`
+- **Description**: Retrieves revenue data by movie
+- **Request Body**: None
+- **Response Body**:
+  ```json
+  [
+    {
+      "MovieID": "movie_id",
+      "Title": "Movie Title",
+      "Revenue": 2000.00,
+      "TicketsSold": 150
+    },
+    ...
+  ]
+  ```
+- **Error Codes**:
+  - 500: Error fetching movie revenue report
+- **Status**: ✅ Implemented
+
+### 5. Get Top Customers Report
+- **Endpoint**: `GET /api/reports/customers/top`
+- **Description**: Retrieves data on top customers by spending
+- **Request Headers**:
+  - customerlimit: Number of customers to return (default: 10)
+- **Request Body**: None
+- **Response Body**:
+  ```json
+  [
+    {
+      "CustomerID": "customer_id",
+      "FullName": "Customer Name",
+      "TotalSpent": 1500.00,
+      "OrderCount": 15
+    },
+    ...
+  ]
+  ```
+- **Error Codes**:
+  - 500: Error fetching top customer report
+- **Status**: ✅ Implemented
