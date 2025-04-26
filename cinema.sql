@@ -1205,30 +1205,30 @@ CALL InsertFoodAndDrink('OTHERS', 'Hamburger', 50, TRUE, 70000.00, NULL, NULL, @
 
 
 
--- ------------------------------------------------
--- -- Xóa dữ liệu mẫu
-DELETE FROM SHOWTIME_SEAT;
-DELETE FROM FOOD_DRINK_ORDER;
-DELETE FROM ORDERS;
-DELETE FROM VOUCHER_CONSTRAINT;
-DELETE FROM VOUCHER;
-DELETE FROM RATING;
-DELETE FROM MOVIE_GENRE;
-DELETE FROM SHOWTIME;
-DELETE FROM SEAT;
-DELETE FROM ROOM;
-DELETE FROM CUSTOMER;
-DELETE FROM MOVIE;
-DELETE FROM SCREEN;
-DELETE FROM DRINK;
-DELETE FROM POPCORN;
-DELETE FROM FOOD_AND_DRINK;
-DELETE FROM CINEMA_PHONE;
-DELETE FROM CINEMA;
-DELETE FROM ID_COUNTER;
-DELETE FROM MANAGER;
--- ----------------------------------------------------- 
-DROP database cinemasystem;
--- -----------------------------------------------------
+-- -- ------------------------------------------------
+-- -- -- Xóa dữ liệu mẫu
+-- DELETE FROM SHOWTIME_SEAT;
+-- DELETE FROM FOOD_DRINK_ORDER;
+-- DELETE FROM ORDERS;
+-- DELETE FROM VOUCHER_CONSTRAINT;
+-- DELETE FROM VOUCHER;
+-- DELETE FROM RATING;
+-- DELETE FROM MOVIE_GENRE;
+-- DELETE FROM SHOWTIME;
+-- DELETE FROM SEAT;
+-- DELETE FROM ROOM;
+-- DELETE FROM CUSTOMER;
+-- DELETE FROM MOVIE;
+-- DELETE FROM SCREEN;
+-- DELETE FROM DRINK;
+-- DELETE FROM POPCORN;
+-- DELETE FROM FOOD_AND_DRINK;
+-- DELETE FROM CINEMA_PHONE;
+-- DELETE FROM CINEMA;
+-- DELETE FROM ID_COUNTER;
+-- DELETE FROM MANAGER;
+-- -- ----------------------------------------------------- 
+-- DROP database cinemasystem;
+-- -- -----------------------------------------------------
 
 
