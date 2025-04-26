@@ -17,6 +17,12 @@ export interface MovieRevenueItem {
     MovieTitle: string;
     Revenue: number;
 }
+export interface TopCustomersItem {
+    CustomerID: string;
+    CustomerName: string;
+    TotalSpent: number;
+    TotalOrders: number;
+}
 
 export async function getStatistics(): Promise<StatisticsData> {
     try {
@@ -125,3 +131,32 @@ export async function getMovieRevenue(): Promise<MovieRevenueItem[]> {
     }
 }
 
+export async function getTopCustomers(limit): Promise<TopCustomersItem[]> {
+    try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+            throw new Error("Authentication required");
+        }
+        const response = await fetch(API_REPORT.GET_TOP_CUSTOMERS, {
+            method: "GET",
+            headers: {
+                Authorization: `Bearer ${token}`,
+                CustomerLimit: limit,
+            },
+        });
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || "Failed to fetch top customers");
+        }
+        const data = await response.json();
+        return data.map((item: any) => ({
+            CustomerID: item.CustomerID,
+            CustomerName: item.FullName,
+            TotalSpent: item.TotalSpent,
+            TotalOrders: item.TotalOrders,
+        }));
+    } catch (error) {
+        console.error("Error fetching top customers:", error);
+        throw error;
+    }
+}

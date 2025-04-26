@@ -35,7 +35,8 @@ class ReportController {
     }
     async getTopCustomerReport(req, res) {
         try {
-            const report = await reportModel.getTopCustomerReport();
+            const limit = parseInt(req.headers['customerlimit']) || 10;
+            const report = await reportModel.getTopCustomerReport(limit);
             res.status(200).json(report);
         } catch (error) {
             res.status(500).json({ message: 'Error fetching top customer report', error });

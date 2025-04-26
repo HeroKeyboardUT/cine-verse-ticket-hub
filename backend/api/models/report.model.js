@@ -2,14 +2,16 @@ import pool from "../../config/database.js";
 
 class ReportModel {
     async getStatisticReport() {
-        const sql = `
-        CALL GetCinemaStatistics(@tRevenue, @tTickets, @tMovies);
-        SELECT 
+
+        await pool.query(`
+        CALL GetCinemaStatistics(@tRevenue, @tTickets, @tMovies)
+        `);
+        const [rows] =  await pool.query(`
+            SELECT 
         @tRevenue AS TotalRevenue,
         @tTickets AS TotalTicket, 
         @tMovies AS TotalMovie;
-        `;
-        const [rows] = await pool.query(sql);
+        `);
         return rows[0];
     }
     async getMonthlyRevenueReport() {
@@ -35,7 +37,7 @@ class ReportModel {
     }
     async getTopCustomerReport(limit_count) {
         const sql = `
-        CALL TopCustomer(?);
+        CALL TopCustomers(?);
         `;
         const [rows] = await pool.query(sql, [limit_count]);
         return rows[0];
