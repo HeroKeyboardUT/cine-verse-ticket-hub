@@ -15,7 +15,7 @@ moviesRoute.post("/create", moviesController.createMovie);
 moviesRoute.post("/:id/ratings", moviesController.postMovieRating);
 
 // PUT API
-moviesRoute.put("/update", moviesController.updateMovie);
+moviesRoute.put("/update/:id", moviesController.updateMovie);
 
 // DELETE API
 moviesRoute.delete("/:id", moviesController.deleteMovie);

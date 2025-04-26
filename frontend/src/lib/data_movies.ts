@@ -3,9 +3,10 @@
 
 import API_MOVIES from "./API_lib/API_MOVIES.ts";
 import { formatDuration } from "../lib/utils.ts";
+import { parseDuration } from "../lib/utils.ts";
 
 export interface Movie {
-  id: string;
+  id?: string; // id là optional khi tạo mới
   title: string;
   releaseDate: string;
   duration?: number;
@@ -59,7 +60,7 @@ export const fetchMovies = async (): Promise<Movie[]> => {
 };
 
 // Lấy phim theo ID (GET /api/movies/:id)
-export const fetchMovieById = async (id: string): Promise<Movie> => {
+export const fetchMovieById = async (id: string) => {
   try {
     const response = await fetch(API_MOVIES.GET_MOVIE_BY_ID.replace(":id", id));
     if (!response.ok) {
@@ -95,27 +96,29 @@ export const fetchMovieById = async (id: string): Promise<Movie> => {
 // Tạo phim mới (POST /api/movies)
 export const createMovie = async (movie: Movie): Promise<Movie> => {
   try {
+    console.log("movie", movie);
+    const movieData = {
+      Title: movie.title,
+      ReleaseDate: movie.releaseDate,
+      Duration: parseDuration(movie.duration), // Chuyển đổi định dạng duration
+      Language: movie.language || null,
+      Description: movie.description || null,
+      PosterURL: movie.posterUrl || null,
+      AgeRating: movie.ageRating || null,
+      Studio: movie.studio || null,
+      Country: movie.country || null,
+      Director: movie.director || null,
+      CustomerRating: movie.customerRating || 0,
+      Genres: movie.genre ? movie.genre.join(",") : "",
+      isShow: movie.isShowing || false,
+    };
+
     const response = await fetch(API_MOVIES.CREATE_MOVIE, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        MovieID: movie.id,
-        Title: movie.title,
-        ReleaseDate: movie.releaseDate,
-        Duration: movie.duration,
-        Language: movie.language || null,
-        Description: movie.description || null,
-        PosterURL: movie.posterUrl || null,
-        AgeRating: movie.ageRating || null,
-        Studio: movie.studio || null,
-        Country: movie.country || null,
-        Director: movie.director || null,
-        customerRating: movie.customerRating || 0,
-        Genres: movie.genre.join(","),
-        isShow: movie.isShowing || false,
-      }),
+      body: JSON.stringify(movieData),
     });
 
     if (!response.ok) {
@@ -124,22 +127,34 @@ export const createMovie = async (movie: Movie): Promise<Movie> => {
     }
 
     const result = await response.json();
+
+    // Kiểm tra cấu trúc response
+    if (!result.movie) {
+      throw new Error("Response không đúng định dạng");
+    }
+
+    const newMovieData = result.movie;
+
+    // Chuyển đổi dữ liệu từ backend sang định dạng frontend
     const newMovie: Movie = {
-      id: result.movie.MovieID,
-      title: result.movie.Title,
-      releaseDate: result.movie.ReleaseDate,
-      duration: result.movie.Duration,
-      language: movie.language || "",
-      description: movie.description || "",
-      posterUrl: movie.posterUrl || "",
-      ageRating: movie.ageRating || "",
-      studio: movie.studio || "",
-      country: movie.country || "",
-      director: movie.director || "",
-      customerRating: movie.customerRating || 0,
-      genre: result.movie.Genres
-        ? result.movie.Genres.split(",").map((g: string) => g.trim())
+      id: newMovieData.MovieID,
+      title: newMovieData.Title,
+      releaseDate: new Date(newMovieData.ReleaseDate)
+        .toISOString()
+        .split("T")[0],
+      duration: newMovieData.Duration,
+      language: newMovieData.Language || "",
+      description: newMovieData.Description || "",
+      posterUrl: newMovieData.PosterURL || "",
+      ageRating: newMovieData.AgeRating || "",
+      studio: newMovieData.Studio || "",
+      country: newMovieData.Country || "",
+      director: newMovieData.Director || "",
+      customerRating: newMovieData.CustomerRating || 0,
+      genre: newMovieData.Genres
+        ? newMovieData.Genres.split(",").map((g: string) => g.trim())
         : [],
+      isShowing: newMovieData.isShow || false,
     };
 
     return newMovie;
@@ -149,29 +164,33 @@ export const createMovie = async (movie: Movie): Promise<Movie> => {
   }
 };
 
-// Cập nhật phim (PUT /api/movies/:id)
 export const updateMovie = async (movie: Movie): Promise<Movie> => {
   try {
-    const response = await fetch(``, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        Title: movie.title,
-        ReleaseDate: movie.releaseDate,
-        Duration: movie.duration,
-        Language: movie.language || null,
-        Description: movie.description || null,
-        PosterURL: movie.posterUrl || null,
-        AgeRating: movie.ageRating || null,
-        Studio: movie.studio || null,
-        Country: movie.country || null,
-        Director: movie.director || null,
-        CustomerRating: movie.customerRating || 0,
-        Genres: movie.genre.join(","),
-      }),
-    });
+    const response = await fetch(
+      API_MOVIES.UPDATE_MOVIE.replace(":id", movie.id),
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          MovieID: movie.id,
+          Title: movie.title,
+          ReleaseDate: movie.releaseDate,
+          Duration: parseDuration(movie.duration),
+          Language: movie.language || null,
+          Description: movie.description || null,
+          PosterURL: movie.posterUrl || null,
+          AgeRating: movie.ageRating || null,
+          Studio: movie.studio || null,
+          Country: movie.country || null,
+          Director: movie.director || null,
+          CustomerRating: movie.customerRating || 0,
+          Genres: movie.genre ? movie.genre.join(",") : "",
+          isShow: movie.isShowing || false,
+        }),
+      }
+    );
 
     if (!response.ok) {
       const errorData = await response.json();
@@ -179,22 +198,27 @@ export const updateMovie = async (movie: Movie): Promise<Movie> => {
     }
 
     const result = await response.json();
+    const updatedMovieData = result.movie;
     const updatedMovie: Movie = {
-      id: result.movie.MovieID,
-      title: result.movie.Title,
-      releaseDate: result.movie.ReleaseDate,
-      duration: result.movie.Duration,
-      language: movie.language || "",
-      description: movie.description || "",
-      posterUrl: movie.posterUrl || "",
-      ageRating: movie.ageRating || "",
-      studio: movie.studio || "",
-      country: movie.country || "",
-      director: movie.director || "",
-      customerRating: movie.customerRating || 0,
-      genre: result.movie.Genres
-        ? result.movie.Genres.split(",").map((g: string) => g.trim())
-        : [],
+      id: updatedMovieData.MovieID || movie.id,
+      title: updatedMovieData.Title || movie.title,
+      releaseDate: updatedMovieData.ReleaseDate
+        ? new Date(updatedMovieData.ReleaseDate).toISOString().split("T")[0]
+        : movie.releaseDate,
+      duration: updatedMovieData.Duration || movie.duration,
+      language: updatedMovieData.Language || movie.language || "",
+      description: updatedMovieData.Description || movie.description || "",
+      posterUrl: updatedMovieData.PosterURL || movie.posterUrl || "",
+      ageRating: updatedMovieData.AgeRating || movie.ageRating || "",
+      studio: updatedMovieData.Studio || movie.studio || "",
+      country: updatedMovieData.Country || movie.country || "",
+      director: updatedMovieData.Director || movie.director || "",
+      customerRating:
+        updatedMovieData.CustomerRating || movie.customerRating || 0,
+      genre: updatedMovieData.Genres
+        ? updatedMovieData.Genres.split(",").map((g: string) => g.trim())
+        : movie.genre || [],
+      isShowing: updatedMovieData.isShow || movie.isShowing || false,
     };
 
     return updatedMovie;
@@ -205,7 +229,7 @@ export const updateMovie = async (movie: Movie): Promise<Movie> => {
 };
 
 // Xóa phim (DELETE /api/movies/:id)
-export const deleteMovie = async (movieId: string): Promise<void> => {
+export const deleteMovie = async (movieId: string) => {
   try {
     const response = await fetch(
       `http://localhost:5000/api/movies/${movieId}`,

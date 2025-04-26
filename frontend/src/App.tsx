@@ -19,6 +19,7 @@ import Tickets from "./pages/admin/Tickets";
 import Showtimes from "./pages/admin/Showtimes";
 import Settings from "./pages/admin/Settings";
 import Cinemas from "./pages/admin/Cinemas";
+import Orders from "./pages/admin/Orders";
 import Register from "./pages/Register";
 import Login from "./pages/Login";
 import Profile from "./pages/Profile";
@@ -131,6 +132,7 @@ const App = () => (
             <Route path="movies" element={<Movies />} />
             <Route path="cinemas" element={<Cinemas />} />
             <Route path="users" element={<Users />} />
+            <Route path="orders" element={<Orders />} />
             <Route path="tickets" element={<Tickets />} />
             <Route path="showtimes" element={<Showtimes />} />
             <Route path="reports" element={<Reports />} />

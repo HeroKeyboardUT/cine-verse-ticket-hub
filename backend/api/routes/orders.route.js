@@ -5,15 +5,16 @@ import express from "express";
 const orderRoute = express.Router();
 
 // GET API
-orderRoute.get("/", ordersController.getAllOrders);
+orderRoute.get("/", authController.verifyToken, authController.verifyAdmin, ordersController.getAllOrders);
 orderRoute.get("/:id", ordersController.getOrderById);
-
+orderRoute.get("/:id/food", ordersController.getFoodByOrderId);
+orderRoute.get("/:id/tickets", ordersController.getTicketByOrderId);
 // POST API
 orderRoute.post("/", authController.verifyToken, ordersController.createOrder);
 // PUT API
-orderRoute.put("/:id", ordersController.updateOrder);
-
+orderRoute.put("/:id",  ordersController.updateOrder);
+orderRoute.put("/:id/status", authController.verifyToken, authController.verifyAdmin, ordersController.updateOrderStatus);
 // DELETE API
-orderRoute.delete("/:id", ordersController.deleteOrder);
+orderRoute.delete("/:id", authController.verifyToken, authController.verifyAdmin, ordersController.deleteOrder);
 
 export default orderRoute;

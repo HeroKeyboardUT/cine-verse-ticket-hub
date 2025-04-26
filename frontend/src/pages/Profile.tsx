@@ -70,7 +70,6 @@ const Profile = () => {
           throw new Error("User data not found");
         }
         const user = await fetchUserById(userData.id);
-        console.log(user);
         // Fetch user orders
         const userOrders = await fetchUserOrders(userData.id);
 
@@ -142,6 +141,7 @@ const Profile = () => {
     (order) => order.Status === "Completed" || order.Status === "Cancelled"
   );
 
+  console.log(user);
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

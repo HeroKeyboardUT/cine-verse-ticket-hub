@@ -22,7 +22,7 @@ class OrdersModel {
 
     const [result] = await pool.query(
       `INSERT INTO ORDERS (CustomerID, PaymentMethod, VoucherID, Status) 
-       VALUES (?, ?, ?, 'Processing')`,
+       VALUES (?, ?, ?, 'Pending')`,
       [customerId, paymentMethod, voucherId || null]
     );
 
@@ -77,6 +77,30 @@ class OrdersModel {
 
   async deleteOrder(id) {
     await pool.query(`DELETE FROM ORDERS WHERE OrderID = ?`, [id]);
+  }
+
+  async getFoodByOrderId(orderId) {
+    const [rows] = await pool.query(
+      `SELECT * FROM FOOD_DRINK_ORDER WHERE OrderID = ?`,
+      [orderId]
+    );
+    return rows;
+  }
+
+  async getTicketByOrderId(orderId) {
+    const [rows] = await pool.query(
+      `SELECT * FROM SHOWTIME_SEAT WHERE OrderID = ?`,
+      [orderId]
+    );
+    return rows;
+  }
+  
+  async updateOrderStatus(orderId, status) {
+    const result = await pool.query(
+      `UPDATE ORDERS SET Status = ? WHERE OrderID = ?`,
+      [status, orderId]
+    );
+    return result[0].affectedRows > 0;
   }
 }
 

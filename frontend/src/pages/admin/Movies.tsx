@@ -51,7 +51,6 @@ const MovieList = () => {
       try {
         setIsLoading(true);
         const data = await fetchMovies();
-        console.log(data);
         setMoviesData(data);
         setFilteredMovies(data);
       } catch (err) {
@@ -164,23 +163,35 @@ const MovieList = () => {
   const handleSaveMovie = async (movie: Movie) => {
     try {
       if (dialogMode === "create") {
+        // Thêm mới phim và cập nhật state
         const newMovie = await createMovie(movie);
-        setMoviesData((prev) => [...prev, newMovie]); // Sử dụng newMovie từ backend
+        // Refresh danh sách phim sau khi thêm mới
+        setMoviesData((prevMovies) => [...prevMovies, newMovie]);
+
         toast({
           title: "Movie created",
-          description: `"${newMovie.title}" has been added to the database.`,
+          description: `"${movie.title}" has been created successfully.`,
         });
       } else if (dialogMode === "edit") {
+        // Cập nhật phim và cập nhật state
         const updatedMovie = await updateMovie(movie);
-        setMoviesData((prev) =>
-          prev.map((m) => (m.id === updatedMovie.id ? updatedMovie : m))
+        // Cập nhật phim đã chỉnh sửa trong danh sách
+        setMoviesData((prevMovies) =>
+          prevMovies.map((m) => (m.id === movie.id ? updatedMovie : m))
         );
+
         toast({
           title: "Movie updated",
-          description: `"${updatedMovie.title}" has been updated successfully.`,
+          description: `"${movie.title}" has been updated successfully.`,
         });
       }
+
+      // Đóng dialog sau khi hoàn tất
       setIsDialogOpen(false);
+
+      // Tải lại danh sách phim để cập nhật giao diện
+      const refreshedMovies = await fetchMovies();
+      setMoviesData(refreshedMovies);
     } catch (err) {
       toast({
         title: "Error",
