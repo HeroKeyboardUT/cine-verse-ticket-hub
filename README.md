@@ -15,8 +15,9 @@ cd frontend
 npm i
 ```
 ## Setup database
-1. Copy the content in `cinema.sql` and run it in your MySQL instance
-2. Create a file name `.env` in folder backend with the following contents
+1. Create the sManager user in SQL (the source code is commented at the top of `cinema.sql`).
+2. Copy the contents of `cinema.sql` and run it in your MySQL instance.
+3. Create a file named `.env` (if it doesn't exist) in the `backend` folder with the following contents :
 ```env
 # Main env
 PORT = 5000
