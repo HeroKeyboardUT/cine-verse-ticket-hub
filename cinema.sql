@@ -488,7 +488,6 @@ END//
 
 DELIMITER ;
 
--- Mới tìm thấy
 DELIMITER //
 
 CREATE TRIGGER before_showtime_seat_update
@@ -706,6 +705,72 @@ BEGIN
 
     COMMIT;
 END //
+
+CREATE PROCEDURE GetCinemaStatistics(
+  OUT p_TotalRevenue DECIMAL(12,2),
+  OUT p_TotalTickets INT,
+  OUT p_TotalMovies INT
+)
+BEGIN
+  -- Tổng doanh thu
+  SELECT COALESCE(SUM(TotalPrice), 0)
+  INTO p_TotalRevenue
+  FROM ORDERS;
+
+  -- Tổng số vé bán
+  SELECT COUNT(*)
+  INTO p_TotalTickets
+  FROM SHOWTIME_SEAT
+  WHERE OrderID IS NOT NULL;
+
+  -- Tổng số phim đang chiếu (có showtime trong tương lai hoặc isShow = true)
+  SELECT COUNT(DISTINCT m.MovieID)
+  INTO p_TotalMovies
+  FROM MOVIE m
+  JOIN SHOWTIME s ON m.MovieID = s.MovieID
+  WHERE s.StartTime >= CURRENT_DATE
+     OR m.isShow = TRUE;
+END;
+//
+
+-- Doanh thu theo tháng
+CREATE PROCEDURE RevenueByMonth()
+BEGIN
+  SELECT DATE_FORMAT(OrderDate, '%Y-%m') AS Month, SUM(TotalPrice) AS MonthlyRevenue
+  FROM ORDERS
+  GROUP BY Month
+  ORDER BY Month;
+END;//
+
+-- Doanh thu theo ngày
+CREATE PROCEDURE RevenueByDay()
+BEGIN
+  SELECT DATE(OrderDate) AS Date, SUM(TotalPrice) AS DailyRevenue
+  FROM ORDERS
+  GROUP BY Date
+  ORDER BY Date;
+END;//
+
+-- Doanh thu theo phim
+CREATE PROCEDURE RevenueByMovie()
+BEGIN
+  SELECT m.Title, SUM(s.Price) AS MovieRevenue
+  FROM SHOWTIME_SEAT s 
+  JOIN SHOWTIME st ON s.ShowTimeID = st.ShowTimeID
+  JOIN MOVIE m ON st.MovieID = m.MovieID
+  WHERE s.OrderID IS NOT NULL
+  GROUP BY m.Title
+  ORDER BY MovieRevenue DESC;
+END;//
+
+-- Top khách hàng chi tiêu nhiều nhất
+CREATE PROCEDURE TopCustomers(IN limit_count INT)
+BEGIN
+  SELECT CustomerID, FullName, TotalSpent, TotalOrders
+  FROM CUSTOMER
+  ORDER BY TotalSpent DESC
+  LIMIT limit_count;
+END;//
 
 DELIMITER ;
 
@@ -1234,4 +1299,11 @@ CALL InsertFoodAndDrink('OTHERS', 'Hamburger', 50, TRUE, 70000.00, NULL, NULL, @
 -- DROP database cinemasystem;
 -- -- -----------------------------------------------------
 
+CALL GetCinemaStatistics(@tRevenue, @tTickets, @tMovies);
+SELECT 
+@tRevenue AS TotalRevenue,
+@tTickets AS TotalTicket, 
+@tMovies AS TotalMovie;
 
+CALL RevenueByMovie();
+CALL TopCustomers(10);
