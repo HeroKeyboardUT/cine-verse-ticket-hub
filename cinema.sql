@@ -3,6 +3,11 @@ CREATE DATABASE IF NOT EXISTS cinemasystem;
 USE cinemasystem;
 
 
+-- Tạo user sManager
+CREATE USER 'sManager'@'localhost' IDENTIFIED BY '123456';
+GRANT ALL PRIVILEGES ON *.* TO 'sManager'@'localhost' WITH GRANT OPTION;
+FLUSH PRIVILEGES;
+-- CREATE
 CREATE TABLE CINEMA (
     CinemaID CHAR(6) PRIMARY KEY,
     Name VARCHAR(100) NOT NULL,
@@ -1195,11 +1200,6 @@ CALL InsertFoodAndDrink('OTHERS', 'Hamburger', 50, TRUE, 70000.00, NULL, NULL, @
 
 
 
-select * from ORDERs;
-select * from SHOWTIME_SEAT;
-select * from CUSTOMER;
-select * from FOOD_DRINK_ORDER;
-
 
 
 
@@ -1229,3 +1229,6 @@ DELETE FROM ID_COUNTER;
 DELETE FROM MANAGER;
 -- ----------------------------------------------------- 
 DROP database cinemasystem;
+-- -----------------------------------------------------
+
+
