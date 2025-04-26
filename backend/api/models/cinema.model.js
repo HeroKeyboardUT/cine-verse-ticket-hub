@@ -52,48 +52,70 @@ class CinemaModel {
   }
 
   async createCinema(cinema) {
-    const { name, openingHours, closingHours, location, phoneNumbers } = cinema;
     try {
-      const [result] = await pool.query(
-        `INSERT INTO CINEMA (Name, OpeningHours, ClosingHours, Location) 
-          VALUES (?, ?, ?, ?)`,
-        [name, openingHours, closingHours, location]
+      // Lấy và tăng ID
+      const [[{ Counter = 0 } = {}]] = await pool.query(
+        "SELECT Counter FROM ID_COUNTER WHERE Prefix = 'CIN' FOR UPDATE"
       );
-      const cinemaId = result.insertId;
-      if (phoneNumbers && Array.isArray(phoneNumbers) && phoneNumbers.length > 0) {
-        for (const phone of phoneNumbers) {
+      const newCounter = Counter + 1;
+      const cinemaId = `CIN${String(newCounter).padStart(3, "0")}`;
+      await pool.query(
+        "REPLACE INTO ID_COUNTER (Prefix, Counter) VALUES ('CIN', ?)",
+        [newCounter]
+      );
+
+      // Insert cinema
+      await pool.query(
+        `INSERT INTO CINEMA ( Name, OpeningHours, ClosingHours, Location) 
+         VALUES ( ?, ?, ?, ?)`,
+        [cinema.Name, cinema.OpeningHours, cinema.ClosingHours, cinema.Location]
+      );
+
+      if (
+        cinema.PhoneNumbers &&
+        Array.isArray(cinema.PhoneNumbers) &&
+        cinema.PhoneNumbers.length > 0
+      ) {
+        for (const phone of cinema.PhoneNumbers) {
           await pool.query(
             "INSERT INTO CINEMA_PHONE (PhoneNumber, CinemaID) VALUES (?, ?)",
             [phone, cinemaId]
           );
         }
       }
-    } catch (error) {
-      throw new Error(`Không thể tạo rạp chiếu phim: ${error.message}`);
+    } catch (err) {
+      throw new Error(`Tạo rạp thất bại: ${err.message}`);
     }
   }
 
   async updateCinema(id, cinema) {
-    const { name, openingHours, closingHours, location, phoneNumbers } = cinema;
-    try{
+    try {
       await pool.query(
         `UPDATE CINEMA 
           SET Name = ?, OpeningHours = ?, ClosingHours = ?, Location = ? 
           WHERE CinemaID = ?`,
-        [name, openingHours, closingHours, location, id]
+        [
+          cinema.Name,
+          cinema.OpeningHours,
+          cinema.ClosingHours,
+          cinema.Location,
+          id,
+        ]
       );
-
       await pool.query("DELETE FROM CINEMA_PHONE WHERE CinemaID = ?", [id]);
-      if (phoneNumbers && Array.isArray(phoneNumbers) && phoneNumbers.length > 0) {
-        for (const phone of phoneNumbers) {
+      if (
+        cinema.PhoneNumbers &&
+        Array.isArray(cinema.PhoneNumbers) &&
+        cinema.PhoneNumbers.length > 0
+      ) {
+        for (const phone of cinema.PhoneNumbers) {
           await pool.query(
             "INSERT INTO CINEMA_PHONE (PhoneNumber, CinemaID) VALUES (?, ?)",
             [phone, id]
           );
         }
       }
-    }
-    catch (error) {
+    } catch (error) {
       throw new Error(`Không thể cập nhật rạp chiếu phim: ${error.message}`);
     }
   }

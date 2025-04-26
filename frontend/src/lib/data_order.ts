@@ -200,7 +200,6 @@ export const getTicketOrderById = async (
       seatNumber: ticket.SeatNumber,
       price: ticket.Price,
     }));
-
   } catch (error) {
     console.error("Error fetching ticket order:", error);
     return null;

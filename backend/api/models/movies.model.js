@@ -51,7 +51,6 @@ class MoviesModel {
 
   async createMovie(movie) {
     const {
-      MovieID,
       Title,
       ReleaseDate,
       Duration,
@@ -66,14 +65,14 @@ class MoviesModel {
       isShow,
       Genres,
     } = movie;
-    await pool.query(
+    const [result] = await pool.query(
       `
-      INSERT INTO MOVIE
-      (MovieID, Title, ReleaseDate, Duration, Language, Description, PosterURL, AgeRating, Studio, Country, Director, CustomerRating, isShow)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO MOVIE (
+          Title, ReleaseDate, Duration, Language, Description, 
+          PosterURL, AgeRating, Studio, Country, Director, CustomerRating, isShow
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `,
       [
-        MovieID,
         Title,
         ReleaseDate,
         Duration,
@@ -84,64 +83,63 @@ class MoviesModel {
         Studio,
         Country,
         Director,
-        CustomerRating,
-        isShow,
+        CustomerRating || 0,
+        isShow || false,
       ]
     );
 
-    if (Genres) {
-      const genres = Genres.split(",").map((g) => g.trim());
+    const newMovieId = result.insertId;
+
+    // Add genres if provided
+    if (Genres && newMovieId) {
+      const genres =
+        typeof Genres === "string"
+          ? Genres.split(",").map((g) => g.trim())
+          : Genres;
+
       for (const genre of genres) {
-        await pool.query(
-          `
-          INSERT INTO MOVIE_GENRE (MovieID, Genre) VALUES (?, ?)
-        `,
-          [MovieID, genre]
-        );
+        if (genre) {
+          await pool.query(
+            `INSERT INTO MOVIE_GENRE (MovieID, Genre) VALUES (?, ?)`,
+            [newMovieId, genre]
+          );
+        }
       }
     }
+
+    return newMovieId;
   }
 
   async updateMovie(id, movie) {
-    const {
-      Title,
-      ReleaseDate,
-      Duration,
-      Language,
-      Description,
-      PosterURL,
-      AgeRating,
-      Studio,
-      Country,
-      Director,
-      CustomerRating,
-      Genres,
-    } = movie;
     await pool.query(
       `
       UPDATE MOVIE
-      SET Title = ?, ReleaseDate = ?, Duration = ?, Language = ?, Description = ?, PosterURL = ?, AgeRating = ?, Studio = ?, Country = ?, Director = ?, CustomerRating = ?
+      SET Title = ?, ReleaseDate = ?, Duration = ?, Language = ?, Description = ?, PosterURL = ?, AgeRating = ?, Studio = ?, Country = ?, Director = ?, CustomerRating = ?, isShow = ?
       WHERE MovieID = ?
     `,
       [
-        Title,
-        ReleaseDate,
-        Duration,
-        Language,
-        Description,
-        PosterURL,
-        AgeRating,
-        Studio,
-        Country,
-        Director,
-        CustomerRating,
+        movie.Title,
+        movie.ReleaseDate,
+        movie.Duration,
+        movie.Language,
+        movie.Description,
+        movie.PosterURL,
+        movie.AgeRating,
+        movie.Studio,
+        movie.Country,
+        movie.Director,
+        movie.CustomerRating || 0,
+        movie.isShow || false,
         id,
       ]
     );
 
     await pool.query("DELETE FROM MOVIE_GENRE WHERE MovieID = ?", [id]);
-    if (Genres) {
-      const genres = Genres.split(",").map((g) => g.trim());
+    if (movie.Genres) {
+      const genres =
+        typeof movie.Genres === "string"
+          ? movie.Genres.split(",").map((g) => g.trim())
+          : movie.Genres;
       for (const genre of genres) {
         await pool.query(
           `
@@ -154,8 +152,18 @@ class MoviesModel {
   }
 
   async deleteMovie(id) {
+    // Delete related showtimes if any
+    await pool.query("DELETE FROM SHOWTIME WHERE MovieID = ?", [id]);
+
+    // Delete from MOVIE_GENRE
     await pool.query("DELETE FROM MOVIE_GENRE WHERE MovieID = ?", [id]);
-    await pool.query("DELETE FROM MOVIE WHERE MovieID = ?", [id]);
+
+    // Delete from MOVIE table
+    const [result] = await pool.query("DELETE FROM MOVIE WHERE MovieID = ?", [
+      id,
+    ]);
+
+    return result.affectedRows > 0;
   }
 }
 

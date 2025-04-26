@@ -48,8 +48,9 @@ class MoviesController {
 
   async createMovie(req, res) {
     try {
-      await MoviesModel.createMovie(req.body);
-      res.status(201).json({ message: "Movie created successfully" });
+      const newMovieId = await MoviesModel.createMovie(req.body);
+      const movie = await MoviesModel.getMovieById(newMovieId);
+      res.status(201).json({ message: "Movie created successfully", movie });
     } catch (error) {
       res
         .status(500)
@@ -60,7 +61,8 @@ class MoviesController {
   async updateMovie(req, res) {
     try {
       await MoviesModel.updateMovie(req.params.id, req.body);
-      res.status(200).json({ message: "Movie updated successfully" });
+      const movie = await MoviesModel.getMovieById(req.params.id);
+      res.status(200).json({ message: "Movie updated successfully", movie });
     } catch (error) {
       res
         .status(500)

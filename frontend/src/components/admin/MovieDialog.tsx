@@ -56,14 +56,13 @@ const MovieDialog: React.FC<MovieDialogProps> = ({
   useEffect(() => {
     if (movie) {
       setFormData(movie);
-      // console.log(movie, "movieeeeee");
-      setGenreInput(movie.genre.join(", "));
+      setGenreInput(movie.genre?.join(", ") || "");
     } else {
+      // Form mặc định cho phim mới, không có ID
       setFormData({
-        id: "",
         title: "",
-        releaseDate: "",
-        duration: 0,
+        releaseDate: new Date().toISOString().split("T")[0], // Ngày hiện tại
+        duration: 90, // Mặc định 90 phút
         language: "",
         description: "",
         posterUrl: "",
@@ -72,7 +71,8 @@ const MovieDialog: React.FC<MovieDialogProps> = ({
         country: "",
         director: "",
         customerRating: 0,
-        genre: [""],
+        genre: [],
+        isShowing: false,
       });
       setGenreInput("");
     }
@@ -119,33 +119,24 @@ const MovieDialog: React.FC<MovieDialogProps> = ({
 
     const updatedFormData = {
       ...formData,
-      genre: genres.length > 0 ? genres : [""],
+      genre: genres.length > 0 ? genres : [],
     };
 
-    setFormData(updatedFormData);
+    // Validate form
     const newErrors: Partial<Record<keyof Movie, string>> = {};
 
-    if (mode === "create" && !updatedFormData.id) {
-      newErrors.id = "Movie ID is required";
-    } else if (mode === "create" && !/^MOV\d{3}$/.test(updatedFormData.id)) {
-      newErrors.id = "Movie ID must be in format MOVxxx (e.g., MOV001)";
+    // Chỉ validate ID khi edit
+    if (mode === "edit" && !updatedFormData.id) {
+      newErrors.id = "Movie ID is required for editing";
     }
 
+    // Validate các trường bắt buộc
     if (!updatedFormData.title) newErrors.title = "Title is required";
     if (!updatedFormData.releaseDate)
       newErrors.releaseDate = "Release Date is required";
     if (!updatedFormData.duration || updatedFormData.duration <= 0) {
       newErrors.duration = "Duration must be a positive number (in minutes)";
     }
-
-    if (
-      updatedFormData.customerRating !== undefined &&
-      (updatedFormData.customerRating < 0 ||
-        updatedFormData.customerRating > 9.99)
-    ) {
-      newErrors.customerRating = "Rating must be between 0.00 and 9.99";
-    }
-
     if (genres.length === 0) {
       newErrors.genre = "At least one genre is required";
     }
@@ -156,31 +147,17 @@ const MovieDialog: React.FC<MovieDialogProps> = ({
     setIsSubmitting(true);
 
     try {
-      let savedMovie: Movie;
-      if (mode === "create") {
-        savedMovie = await createMovie(updatedFormData);
-      } else if (mode === "edit") {
-        savedMovie = await updateMovie(updatedFormData);
-      } else {
-        setIsSubmitting(false);
-        return;
-      }
-
+      // Chỉ gọi callback onSave một lần, để component cha xử lý API
       if (onSave) {
-        onSave(savedMovie);
+        await onSave(updatedFormData);
       }
 
-      toast({
-        title: mode === "create" ? "Movie created" : "Movie updated",
-        description: `"${savedMovie.title}" has been ${
-          mode === "create" ? "added to" : "updated in"
-        } the database.`,
-      });
-      onOpenChange(false);
-    } catch (err: any) {
+      // Thông báo thành công và clear form đã được di chuyển vào component cha (Movies.tsx)
+    } catch (err) {
       toast({
         title: "Error",
-        description: err.message || "An error occurred while saving the movie.",
+        description:
+          (err as Error).message || "An error occurred while saving the movie.",
         variant: "destructive",
       });
     } finally {
@@ -215,19 +192,20 @@ const MovieDialog: React.FC<MovieDialogProps> = ({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6 pt-4">
-          <div className="space-y-2">
-            <Label htmlFor="id">Movie ID</Label>
-            <Input
-              id="id"
-              name="id"
-              value={formData.id}
-              onChange={handleChange}
-              readOnly={isReadOnly || isEditMode}
-              placeholder="e.g., MOV021"
-              className={errors.id ? "border-red-500" : ""}
-            />
-            {errors.id && <p className="text-red-500 text-sm">{errors.id}</p>}
-          </div>
+          {/* Chỉ hiển thị ID khi edit/view */}
+          {(mode === "edit" || mode === "view") && (
+            <div className="space-y-2">
+              <Label htmlFor="id">Movie ID</Label>
+              <Input
+                id="id"
+                name="id"
+                value={formData.id || ""}
+                readOnly
+                className={errors.id ? "border-red-500" : ""}
+              />
+              {errors.id && <p className="text-red-500 text-sm">{errors.id}</p>}
+            </div>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
