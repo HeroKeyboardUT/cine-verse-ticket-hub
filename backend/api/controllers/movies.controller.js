@@ -83,6 +83,20 @@ class MoviesController {
         .json({ message: "Error deleting movie", error: error.message });
     }
   }
+
+  async GetMovieOrderCount(req, res) {
+    try {
+      const count = await MoviesModel.GetMovieOrderCount(req.params.id);
+      res.status(200).json(count);
+    } catch (error) {
+      res
+        .status(500)
+        .json({
+          message: "Error retrieving order count",
+          error: error.message,
+        });
+    }
+  }
 }
 
 export default new MoviesController();

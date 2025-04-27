@@ -45,6 +45,7 @@ const MovieDialog: React.FC<MovieDialogProps> = ({
       director: "",
       customerRating: 0,
       genre: [""],
+      isShowing: true,
     }
   );
   const [genreInput, setGenreInput] = useState<string>("");
@@ -72,7 +73,7 @@ const MovieDialog: React.FC<MovieDialogProps> = ({
         director: "",
         customerRating: 0,
         genre: [],
-        isShowing: false,
+        isShowing: true,
       });
       setGenreInput("");
     }

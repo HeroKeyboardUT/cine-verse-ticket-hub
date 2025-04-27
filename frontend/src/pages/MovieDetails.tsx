@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { fetchMovieById, fetchMovies, type Movie } from "@/lib/data_movies";
+import {
+  fetchMovieById,
+  fetchMovies,
+  type Movie,
+  fetchMovieOrderCount,
+} from "@/lib/data_movies";
 import { fetchShowtimeByMovieId, type Showtime } from "@/lib/data_showtimes";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -27,12 +32,16 @@ const MovieDetails = () => {
   const [similarMovies, setSimilarMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [orderCount, setOrderCount] = useState<number>(0);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const [fetchedMovie] = await Promise.all([fetchMovieById(movieId!)]);
         setMovie(fetchedMovie);
+
+        const fetchedOrderCount = await fetchMovieOrderCount(movieId!);
+        setOrderCount(fetchedOrderCount);
 
         // Fetch similar movies based on genre
         if (fetchedMovie && fetchedMovie.genre) {
@@ -107,7 +116,7 @@ const MovieDetails = () => {
                   >
                     <Star className="h-4 w-4 text-yellow-400" />
                     <span className="font-medium">
-                      {movie?.customerRating}/5
+                      {movie?.customerRating}/10.0
                     </span>
                   </Badge>
                   <div className="flex items-center text-gray-300">
@@ -117,6 +126,18 @@ const MovieDetails = () => {
                   <div className="flex items-center text-gray-300">
                     <Calendar className="h-4 w-4 mr-2 opacity-70" />
                     <span>{movie?.releaseDate}</span>
+                  </div>
+                  <div className="flex items-center bg-gradient-to-r from-primary/10 to-primary/5 px-3 py-1.5 rounded-full border border-primary/20 transition-all hover:scale-105">
+                    <Ticket className="h-4 w-4 mr-2 text-primary animate-pulse" />
+                    <div className="flex flex-col">
+                      <span className="text-gray-200 text-sm font-medium">
+                        Đã có{" "}
+                        {orderCount > 1000
+                          ? `${(orderCount / 1000).toFixed(1)}k`
+                          : orderCount}{" "}
+                        lượt đặt vé xem phim này, còn bạn thì saoooo
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -193,6 +214,10 @@ const MovieDetails = () => {
                 content="Thông tin không khả dụng"
               />
               <DetailSection title="Đạo diễn" content={movie?.director} />
+              <DetailSection
+                title="Lượt đặt vé"
+                content={`${orderCount} lượt`}
+              />
             </div>
           </TabsContent>
         </Tabs>

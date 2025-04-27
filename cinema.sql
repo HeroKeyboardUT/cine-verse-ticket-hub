@@ -3,6 +3,7 @@
 -- GRANT ALL PRIVILEGES ON *.* TO 'sManager'@'localhost' WITH GRANT OPTION;
 -- FLUSH PRIVILEGES;
 
+-- drop database cinemasystem;
 
 -- Tạo database
 CREATE DATABASE IF NOT EXISTS cinemasystem;
@@ -774,6 +775,133 @@ END;//
 
 DELIMITER ;
 
+DELIMITER //
+
+
+-- Add Features
+CREATE PROCEDURE GetHighRatedMovies(
+    IN p_MinRating DECIMAL(4,2)
+)
+BEGIN
+    -- Kiểm tra đầu vào
+    IF p_MinRating < 0 OR p_MinRating > 10 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Điểm đánh giá tối thiểu phải nằm trong khoảng từ 0 đến 10.';
+    END IF;
+    
+    -- Truy vấn các phim có đánh giá trung bình trên ngưỡng
+    SELECT 
+        m.MovieID,
+        m.Title,
+        AVG(r.Score) AS AverageRating,
+        COUNT(r.Score) AS NumberOfRatings
+    FROM MOVIE m
+    LEFT JOIN RATING r ON m.MovieID = r.MovieID
+    WHERE m.isShow = TRUE
+    GROUP BY m.MovieID, m.Title
+    HAVING AVG(r.Score) > p_MinRating
+    ORDER BY AverageRating DESC;
+END //
+
+DELIMITER ;
+
+DELIMITER //
+
+CREATE TRIGGER after_showtime_delete
+AFTER DELETE ON SHOWTIME
+FOR EACH ROW
+BEGIN
+    DECLARE remaining_showtimes INT;
+    
+    -- Đếm số suất chiếu còn lại của phim
+    SELECT COUNT(*) INTO remaining_showtimes
+    FROM SHOWTIME
+    WHERE MovieID = OLD.MovieID;
+    
+    -- Nếu không còn suất chiếu, cập nhật isShow = FALSE
+    IF remaining_showtimes = 0 THEN
+        UPDATE MOVIE
+        SET isShow = FALSE
+        WHERE MovieID = OLD.MovieID;
+    END IF;
+END //
+
+DELIMITER ;
+
+DELIMITER //
+
+CREATE FUNCTION GetRevenueByLocation(location_id CHAR(6)) 
+RETURNS DECIMAL(10,2)
+DETERMINISTIC
+READS SQL DATA
+BEGIN
+  DECLARE total_revenue DECIMAL(10,2);
+  
+  SELECT SUM(o.TotalPrice) INTO total_revenue
+  FROM ORDERS o
+  JOIN SHOWTIME_SEAT ss ON o.OrderID = ss.OrderID
+  JOIN SHOWTIME st ON ss.ShowTimeID = st.ShowTimeID
+  WHERE st.CinemaID = location_id AND o.Status = 'Completed';
+  
+  RETURN IFNULL(total_revenue, 0);
+END//
+
+DELIMITER ;
+
+DELIMITER //
+
+CREATE FUNCTION GetShowtimeOccupancyRate(showtime_id CHAR(6)) 
+RETURNS DECIMAL(5,2)
+DETERMINISTIC
+READS SQL DATA
+BEGIN
+  DECLARE sold_seats INT;
+  DECLARE total_seats INT;
+  DECLARE occupancy_rate DECIMAL(5,2);
+  
+  -- Get total seats for the room
+  SELECT COUNT(*) INTO total_seats
+  FROM SHOWTIME_SEAT
+  WHERE ShowTimeID = showtime_id;
+  
+  -- Get sold seats
+  SELECT COUNT(*) INTO sold_seats
+  FROM SHOWTIME_SEAT
+  WHERE ShowTimeID = showtime_id AND OrderID IS NOT NULL;
+  
+  -- Calculate occupancy rate (percentage)
+  IF total_seats > 0 THEN
+    SET occupancy_rate = (sold_seats / total_seats) * 100;
+  ELSE
+    SET occupancy_rate = 0;
+  END IF;
+  
+  RETURN occupancy_rate;
+END//
+
+DELIMITER ;
+
+DELIMITER //
+CREATE FUNCTION GetMovieOrderCount(movie_id CHAR(6)) 
+RETURNS INT
+DETERMINISTIC
+READS SQL DATA
+BEGIN
+  DECLARE order_count INT;
+  
+  SELECT COUNT(DISTINCT ss.OrderID) INTO order_count
+  FROM SHOWTIME_SEAT ss
+  JOIN SHOWTIME st ON ss.ShowTimeID = st.ShowTimeID
+  WHERE st.MovieID = movie_id
+    AND ss.OrderID IS NOT NULL;
+  
+  RETURN order_count;
+END//
+DELIMITER ;
+
+-- SELECT GetMovieOrderCount('MOV001');
+-- SELECT GetShowtimeOccupancyRate('SHT001');
+-- SELECT GetRevenueByLocation('CIN001');
 
 -- INSERT --
 SET SQL_SAFE_UPDATES = 0;
@@ -1122,95 +1250,22 @@ VALUES
 ('VCH004', 'MaxValue', 150000, NULL);
 
 
--- INSERT INTO ORDERS (OrderDate, Status, PaymentMethod, VoucherID, CustomerID) VALUES
--- ('2025-04-23 10:00:00', 'Completed', 'Credit Card', 'VCH001', 'CUS001'),
--- ('2025-04-23 11:00:00', 'Processing', 'Cash', NULL, 'CUS002'),
--- ('2025-04-23 12:00:00', 'Completed', 'Mobile App', 'VCH002', 'CUS003'),
--- ('2025-04-23 13:00:00', 'Completed', 'Credit Card', 'VCH003', 'CUS004'),
--- ('2025-04-24 09:00:00', 'Completed', 'Cash', 'VCH004', 'CUS005'),
--- ('2025-04-24 10:30:00', 'Processing', 'Mobile App', NULL, 'CUS006'),
--- ('2025-04-24 12:00:00', 'Completed', 'Credit Card', 'VCH005', 'CUS007'),
--- ('2025-04-24 14:00:00', 'Completed', 'Cash', 'VCH006', 'CUS008'),
--- ('2025-04-24 16:00:00', 'Processing', 'Mobile App', NULL, 'CUS009'),
--- ('2025-04-24 18:00:00', 'Completed', 'Credit Card', 'VCH007', 'CUS010'),
--- ('2025-04-25 09:00:00', 'Completed', 'Cash', 'VCH008', 'CUS011'),
--- ('2025-04-25 11:00:00', 'Processing', 'Mobile App', NULL, 'CUS012'),
--- ('2025-04-25 13:00:00', 'Completed', 'Credit Card', 'VCH009', 'CUS013'),
--- ('2025-04-25 15:00:00', 'Completed', 'Cash', 'VCH010', 'CUS014'),
--- ('2025-04-25 17:00:00', 'Processing', 'Mobile App', NULL, 'CUS015'),
--- ('2025-04-25 19:00:00', 'Completed', 'Credit Card', 'VCH011', 'CUS016'),
--- ('2025-04-26 09:00:00', 'Completed', 'Cash', 'VCH012', 'CUS017'),
--- ('2025-04-26 11:00:00', 'Processing', 'Mobile App', NULL, 'CUS018'),
--- ('2025-04-26 13:00:00', 'Completed', 'Credit Card', 'VCH013', 'CUS019'),
--- ('2025-04-26 15:00:00', 'Completed', 'Cash', 'VCH014', 'CUS020'),
--- ('2025-04-26 17:00:00', 'Processing', 'Mobile App', NULL, 'CUS021'),
--- ('2025-04-26 19:00:00', 'Completed', 'Credit Card', 'VCH001', 'CUS022'),
--- ('2025-04-27 09:00:00', 'Completed', 'Cash', 'VCH002', 'CUS023'),
--- ('2025-04-27 11:00:00', 'Processing', 'Mobile App', NULL, 'CUS024');
+INSERT INTO ORDERS (OrderDate, Status, PaymentMethod, TotalPrice, VoucherID, CustomerID, isTicket) VALUES
+('2025-04-23 10:00:00', 'Completed', 'Credit Card', 180000.00, 'VCH001', 'CUS001', TRUE),
+('2025-04-23 11:00:00', 'Processing', 'Cash', 90000.00, NULL, 'CUS002', TRUE),
+('2025-04-23 12:00:00', 'Completed', 'Mobile App', 240000.00, 'VCH002', 'CUS003', TRUE),
+('2025-04-23 13:00:00', 'Completed', 'Credit Card', 360000.00, 'VCH003', 'CUS004', TRUE),
+('2025-04-24 09:00:00', 'Completed', 'Cash', 180000.00, 'VCH004', 'CUS005', TRUE),
+('2025-04-24 10:30:00', 'Processing', 'Mobile App', 120000.00, NULL, 'CUS006', TRUE);
 
--- INSERT INTO SHOWTIME_SEAT (ShowTimeID, SeatNumber, OrderID, Price) VALUES
--- -- SHT001: CIN001, Room 1, Movie: Avengers: Endgame
--- ('SHT001', 'A1', 'ORD001', 90000.00), ('SHT001', 'A2', 'ORD001', 90000.00),
--- ('SHT001', 'B1', 'ORD001', 120000.00), ('SHT001', 'B2', 'ORD001', 120000.00),
--- -- SHT002: CIN001, Room 2, Movie: Dune: Part Two
--- ('SHT002', 'C1', 'ORD003', 90000.00), ('SHT002', 'C2', 'ORD003', 90000.00),
--- ('SHT002', 'D1', 'ORD003', 120000.00), ('SHT002', 'D2', 'ORD003', 120000.00),
--- -- SHT003: CIN002, Room 1, Movie: Spider-Man: No Way Home
--- ('SHT003', 'A1', 'ORD004', 90000.00), ('SHT003', 'A2', 'ORD004', 90000.00),
--- -- SHT004: CIN002, Room 2, Movie: The Batman
--- ('SHT004', 'B1', 'ORD005', 120000.00), ('SHT004', 'B2', 'ORD005', 120000.00),
--- ('SHT004', 'C1', 'ORD005', 90000.00), ('SHT004', 'C2', 'ORD005', 90000.00),
--- -- SHT005: CIN003, Room 1, Movie: Everything Everywhere
--- ('SHT005', 'A1', 'ORD007', 90000.00), ('SHT005', 'A2', 'ORD007', 90000.00),
--- ('SHT005', 'B1', 'ORD007', 120000.00), ('SHT005', 'B2', 'ORD007', 120000.00),
--- -- SHT006: CIN003, Room 2, Movie: Top Gun: Maverick
--- ('SHT006', 'C1', 'ORD008', 90000.00), ('SHT006', 'C2', 'ORD008', 90000.00),
--- -- SHT007: CIN004, Room 1, Movie: Poor Things
--- ('SHT007', 'A1', 'ORD010', 120000.00), ('SHT007', 'A2', 'ORD010', 120000.00),
--- ('SHT007', 'B1', 'ORD010', 120000.00), ('SHT007', 'B2', 'ORD010', 120000.00),
--- -- SHT008: CIN004, Room 2, Movie: Past Lives
--- ('SHT008', 'C1', 'ORD011', 90000.00), ('SHT008', 'C2', 'ORD011', 90000.00),
--- -- SHT009: CIN005, Room 1, Movie: The Zone of Interest
--- ('SHT009', 'A1', 'ORD012', 90000.00), ('SHT009', 'A2', 'ORD012', 90000.00),
--- ('SHT009', 'B1', 'ORD012', 120000.00), ('SHT009', 'B2', 'ORD012', 120000.00),
--- -- SHT010: CIN005, Room 2, Movie: Anatomy of a Fall
--- ('SHT010', 'C1', 'ORD014', 120000.00), ('SHT010', 'C2', 'ORD014', 120000.00),
--- ('SHT010', 'D1', 'ORD014', 120000.00), ('SHT010', 'D2', 'ORD014', 120000.00),
--- -- SHT011: CIN006, Room 1, Movie: Oppenheimer
--- ('SHT011', 'A1', 'ORD015', 90000.00), ('SHT011', 'A2', 'ORD015', 90000.00),
--- ('SHT011', 'B1', 'ORD015', 120000.00), ('SHT011', 'B2', 'ORD015', 120000.00),
--- -- SHT012: CIN006, Room 2, Movie: Avengers: Endgame
--- ('SHT012', 'C1', 'ORD016', 120000.00), ('SHT012', 'C2', 'ORD016', 120000.00),
--- -- SHT013: CIN007, Room 1, Movie: Dune: Part Two
--- ('SHT013', 'A1', 'ORD017', 90000.00), ('SHT013', 'A2', 'ORD017', 90000.00),
--- -- SHT014: CIN007, Room 2, Movie: Spider-Man: No Way Home
--- ('SHT014', 'B1', 'ORD018', 90000.00), ('SHT014', 'B2', 'ORD018', 90000.00),
--- ('SHT014', 'C1', 'ORD018', 90000.00), ('SHT014', 'C2', 'ORD018', 120000.00),
--- -- SHT015: CIN008, Room 1, Movie: The Batman
--- ('SHT015', 'A1', 'ORD020', 120000.00), ('SHT015', 'A2', 'ORD020', 120000.00),
--- ('SHT015', 'B1', 'ORD020', 120000.00), ('SHT015', 'B2', 'ORD020', 120000.00),
--- -- SHT016: CIN008, Room 2, Movie: Everything Everywhere
--- ('SHT016', 'C1', 'ORD021', 90000.00), ('SHT016', 'C2', 'ORD021', 90000.00),
--- ('SHT016', 'D1', 'ORD021', 120000.00), ('SHT016', 'D2', 'ORD021', 120000.00),
--- -- SHT017: CIN009, Room 1, Movie: Top Gun: Maverick
--- ('SHT017', 'A1', 'ORD022', 120000.00), ('SHT017', 'A2', 'ORD022', 120000.00),
--- -- SHT018: CIN009, Room 2, Movie: Poor Things
--- ('SHT018', 'B1', 'ORD023', 90000.00), ('SHT018', 'B2', 'ORD023', 90000.00),
--- -- SHT019: CIN010, Room 1, Movie: Past Lives
--- ('SHT019', 'A1', 'ORD024', 90000.00), ('SHT019', 'A2', 'ORD024', 90000.00),
--- ('SHT019', 'B1', 'ORD024', 120000.00), ('SHT019', 'B2', 'ORD024', 120000.00),
--- -- SHT020: CIN010, Room 2, Movie: The Zone of Interest
--- ('SHT020', 'C1', 'ORD001', 90000.00), ('SHT020', 'C2', 'ORD001', 90000.00),
--- -- SHT021: CIN011, Room 1, Movie: Anatomy of a Fall
--- ('SHT021', 'A1', 'ORD003', 120000.00), ('SHT021', 'A2', 'ORD003', 120000.00),
--- ('SHT021', 'B1', 'ORD003', 120000.00), ('SHT021', 'B2', 'ORD003', 120000.00),
--- -- SHT022: CIN011, Room 2, Movie: Oppenheimer
--- ('SHT022', 'C1', 'ORD005', 90000.00), ('SHT022', 'C2', 'ORD005', 90000.00),
--- -- SHT023: CIN012, Room 1, Movie: Avengers: Endgame
--- ('SHT023', 'A1', 'ORD007', 90000.00), ('SHT023', 'A2', 'ORD007', 90000.00),
--- ('SHT023', 'B1', 'ORD007', 120000.00), ('SHT023', 'B2', 'ORD007', 120000.00),
--- -- SHT024: CIN012, Room 2, Movie: Dune: Part Two
--- ('SHT024', 'C1', 'ORD008', 120000.00), ('SHT024', 'C2', 'ORD008', 120000.00);
+UPDATE SHOWTIME_SEAT SET OrderID = 'ORD001' WHERE ShowTimeID = 'SHT001' AND CinemaID = 'CIN001' AND RoomNumber = 1 AND SeatNumber = 'A1' AND OrderID IS NULL;
+UPDATE SHOWTIME_SEAT SET OrderID = 'ORD001' WHERE ShowTimeID = 'SHT001' AND CinemaID = 'CIN001' AND RoomNumber = 1 AND SeatNumber = 'A2' AND OrderID IS NULL;
+UPDATE SHOWTIME_SEAT SET OrderID = 'ORD003' WHERE ShowTimeID = 'SHT002' AND CinemaID = 'CIN001' AND RoomNumber = 2 AND SeatNumber = 'B1' AND OrderID IS NULL;
+UPDATE SHOWTIME_SEAT SET OrderID = 'ORD003' WHERE ShowTimeID = 'SHT002' AND CinemaID = 'CIN001' AND RoomNumber = 2 AND SeatNumber = 'B2' AND OrderID IS NULL;
+UPDATE SHOWTIME_SEAT SET OrderID = 'ORD004' WHERE ShowTimeID = 'SHT003' AND CinemaID = 'CIN002' AND RoomNumber = 1 AND SeatNumber = 'C1' AND OrderID IS NULL;
+UPDATE SHOWTIME_SEAT SET OrderID = 'ORD004' WHERE ShowTimeID = 'SHT003' AND CinemaID = 'CIN002' AND RoomNumber = 1 AND SeatNumber = 'C2' AND OrderID IS NULL;
+UPDATE SHOWTIME_SEAT SET OrderID = 'ORD005' WHERE ShowTimeID = 'SHT004' AND CinemaID = 'CIN002' AND RoomNumber = 2 AND SeatNumber = 'D1' AND OrderID IS NULL;
+UPDATE SHOWTIME_SEAT SET OrderID = 'ORD005' WHERE ShowTimeID = 'SHT004' AND CinemaID = 'CIN002' AND RoomNumber = 2 AND SeatNumber = 'D2' AND OrderID IS NULL;
 
 INSERT INTO RATING (CustomerID, MovieID, Score, Comment, RatingDate) VALUES
 ('CUS001', 'MOV001', 9, 'Epic conclusion!', '2025-04-23 15:00:00'),
@@ -1307,3 +1362,4 @@ SELECT
 
 CALL RevenueByMovie();
 CALL TopCustomers(10);
+CALL GetHighRatedMovies(7.00);

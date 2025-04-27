@@ -12,6 +12,8 @@ class API_MOVIES {
 
   GET_MOVIE_ON_SHOWING = API.SOURCE + "/api/movies/now-showing";
 
+  GET_MOVIE_ORDER_COUNT = API.SOURCE + "/api/movies/ordercount/:id";
+
   // CREATE API
   // Endpoint tạo phim phải đúng với backend
   CREATE_MOVIE = API.SOURCE + "/api/movies/create";

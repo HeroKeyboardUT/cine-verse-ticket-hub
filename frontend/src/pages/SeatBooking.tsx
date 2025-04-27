@@ -6,14 +6,19 @@ import { fetchFoodItems, FoodItem } from "@/lib/data_food";
 import { fetchVouchers, Voucher } from "@/lib/data_voucher";
 import { createTicketOrder } from "@/lib/data_order";
 import { useToast } from "@/components/ui/use-toast";
-import { fetchShowtimeByMovieId, Showtime } from "@/lib/data_showtimes";
+import {
+  fetchShowtimeByMovieId,
+  Showtime,
+  fetchOccupancyRate,
+} from "@/lib/data_showtimes";
 import { format } from "date-fns";
-import { Film, Calendar, Clock, MapPin } from "lucide-react";
+import { Film, Calendar, Clock, MapPin, Users } from "lucide-react";
 import { SeatSelector } from "@/components/booking/SeatSelector";
 import { FoodSelector } from "@/components/booking/FoodSelector";
 import { VoucherSelector } from "@/components/booking/VoucherSelector";
 import { BookingSummary } from "@/components/booking/BookingSummary";
 import { CheckoutDialog } from "@/components/booking/CheckoutDialog";
+import { Progress } from "@/components/ui/progress";
 
 const SeatBooking = () => {
   const { movieId, showtimesID } = useParams<{
@@ -32,6 +37,7 @@ const SeatBooking = () => {
   const [showtime, setShowtime] = useState<Showtime | null>(null);
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
   const [vouchersLoading, setVouchersLoading] = useState(true);
+  const [occupancyRate, setOccupancyRate] = useState<number | null>(null);
 
   // State for user selections
   const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
@@ -101,6 +107,14 @@ const SeatBooking = () => {
           );
           if (currentShowtime) {
             setShowtime(currentShowtime);
+          }
+
+          // Fetch occupancy rate
+          try {
+            const rate = await fetchOccupancyRate(showtimesID!);
+            setOccupancyRate(rate);
+          } catch (occupancyError) {
+            console.error("Error fetching occupancy rate:", occupancyError);
           }
         } catch (showtimeError) {
           console.error("Error fetching showtime:", showtimeError);
@@ -363,6 +377,27 @@ const SeatBooking = () => {
               </div>
             </div>
           </div>
+
+          {/* Occupancy Rate Indicator */}
+          {occupancyRate !== null && (
+            <div className="mt-4">
+              <div className="flex items-center gap-2 mb-1">
+                <Users className="h-4 w-4 text-primary" />
+                <span className="text-sm font-medium">Theater Occupancy</span>
+                <span className="text-sm font-bold">
+                  {occupancyRate.toFixed(2)}%
+                </span>
+              </div>
+              <Progress value={occupancyRate} className="h-2" />
+              <p className="text-xs text-muted-foreground mt-1">
+                {occupancyRate > 80
+                  ? "Theater is filling up quickly! Limited seats available."
+                  : occupancyRate > 50
+                  ? "Moderate attendance. Good seats still available."
+                  : "Low attendance. Plenty of seats available."}
+              </p>
+            </div>
+          )}
         </div>
       )}
 

@@ -10,6 +10,8 @@ moviesRoute.get("/:id/ratings", moviesController.getMovieRating);
 moviesRoute.get("/:id/showtimes", moviesController.getMovieShowtimes);
 moviesRoute.get("/:id", moviesController.getMovieById);
 
+moviesRoute.get("/ordercount/:id", moviesController.GetMovieOrderCount);
+
 // Create API
 moviesRoute.post("/create", moviesController.createMovie);
 moviesRoute.post("/:id/ratings", moviesController.postMovieRating);

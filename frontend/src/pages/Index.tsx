@@ -13,6 +13,7 @@ const Index = () => {
     const loadMovies = async () => {
       try {
         const fetchedMovies = await fetchMovies();
+        console.log(fetchedMovies); // Debugging line to check fetched movies
         setMovies(fetchedMovies);
       } catch (err) {
         setError("Không thể tải danh sách phim");
@@ -24,9 +25,12 @@ const Index = () => {
   }, []);
 
   // Xử lý dữ liệu phim
-  const featuredMovie = movies[0] || null; // Lấy phim thứ 2 làm featured (hoặc xử lý khác nếu cần)
-  const inTheaters = movies; // Phim đang chiếu
-  const comingSoon = [...movies.slice(3), ...movies.slice(0, 3)]; // Demo: Lấy một số phim làm coming soon
+  const currentlyShowing = movies.filter((movie) => movie.isShowing == true);
+  const upcomingMovies = movies.filter((movie) => movie.isShowing != true);
+
+  // Chọn phim nổi bật từ phim đang chiếu (nếu có), nếu không thì từ toàn bộ danh sách
+  const featuredMovie =
+    currentlyShowing.length > 0 ? currentlyShowing[0] : movies[0] || null;
 
   // Hiển thị khi đang tải hoặc lỗi
   if (loading) return <div>Đang tải...</div>;
@@ -36,8 +40,8 @@ const Index = () => {
     <div>
       {featuredMovie && <Hero movie={featuredMovie} />}
       <div className="container mx-auto px-4 py-8">
-        <MovieGrid title="Now Showing" movies={inTheaters} />
-        <MovieGrid title="Coming Soon" movies={comingSoon} />
+        <MovieGrid title="Now Showing" movies={currentlyShowing} />
+        <MovieGrid title="Coming Soon" movies={upcomingMovies} />
       </div>
     </div>
   );
