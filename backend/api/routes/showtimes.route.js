@@ -5,7 +5,7 @@ const showtimeRoute = express.Router();
 
 // GET API
 showtimeRoute.get("/:id", showtimeController.getShowtimeById);
-
+showtimeRoute.get("/occupied/:id", showtimeController.getOccupiedRate);
 // Create API
 
 // PUT API

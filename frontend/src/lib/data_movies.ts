@@ -6,7 +6,7 @@ import { formatDuration } from "../lib/utils.ts";
 import { parseDuration } from "../lib/utils.ts";
 
 export interface Movie {
-  id?: string; // id là optional khi tạo mới
+  id: string;
   title: string;
   releaseDate: string;
   duration?: number;
@@ -250,6 +250,32 @@ export const deleteMovie = async (movieId: string) => {
   }
 };
 
+export const fetchMovieOrderCount = async (
+  movieId: string
+): Promise<number> => {
+  try {
+    const response = await fetch(
+      API_MOVIES.GET_MOVIE_ORDER_COUNT.replace(":id", movieId)
+    );
+    if (!response.ok) {
+      throw new Error("Failed to fetch order count");
+    }
+    const data = await response.json();
+
+    // Extract the order count from the response
+    if (data && data.length > 0) {
+      const countKey = `GetMovieOrderCount('${movieId}')`;
+      return data[0][countKey] || 0;
+    }
+    return 0;
+  } catch (error) {
+    console.error("Error fetching order count:", error);
+    return 0;
+  }
+};
+
+// DUMMY DATA FOR MOVIE
+// NOTE: IF DELETE IT, THE APP WOULD CRASH BECAUSE IT IS STILL BE USED IN WatchMovies.tsx
 export const movies: Movie[] = [
   {
     id: "1",

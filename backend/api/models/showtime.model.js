@@ -64,6 +64,16 @@ class showtimeModel {
       throw new Error(`Không thể xóa suất chiếu: ${error.message}`);
     }
   }
+
+  async getOccupiedRate(id) {
+    const [rows] = await pool.query(
+      `
+      SELECT GetShowtimeOccupancyRate(?);
+      `,
+      [id]
+    );
+    return rows[0];
+  }
 }
 
 export default new showtimeModel();

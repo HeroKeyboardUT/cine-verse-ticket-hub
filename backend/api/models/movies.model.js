@@ -165,6 +165,16 @@ class MoviesModel {
 
     return result.affectedRows > 0;
   }
+
+  async GetMovieOrderCount(id) {
+    const [rows] = await pool.query(
+      `
+      SELECT GetMovieOrderCount(?);
+    `,
+      [id]
+    );
+    return rows;
+  }
 }
 
 export default new MoviesModel();

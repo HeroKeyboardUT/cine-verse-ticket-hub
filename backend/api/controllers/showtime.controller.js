@@ -61,6 +61,23 @@ class showtimeController {
         .json({ message: "Error deleting showtime", error: error.message });
     }
   }
+  async getOccupiedRate(req, res) {
+    try {
+      const movieId = req.params.id;
+      const occupiedRate = await showtimeModel.getOccupiedRate(movieId);
+      if (!occupiedRate) {
+        return res.status(404).json({ message: "No occupied rate found" });
+      }
+      res.status(200).json(occupiedRate);
+    } catch (error) {
+      res
+        .status(500)
+        .json({
+          message: "Error retrieving occupied rate",
+          error: error.message,
+        });
+    }
+  }
 }
 
 export default new showtimeController();

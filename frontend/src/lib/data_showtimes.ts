@@ -76,3 +76,18 @@ export const deleteShowtime = async (id: string): Promise<void> => {
     throw new Error(errorData.message || "Failed to delete showtime");
   }
 };
+
+// Fetch occupancy rate for a specific showtime
+export const fetchOccupancyRate = async (
+  showtimeId: string
+): Promise<number> => {
+  const url = API_SHOWTIME.GET_OCCUPANCY_RATE.replace(":id", showtimeId);
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error("Failed to fetch occupancy rate");
+  }
+  const data = await response.json();
+  // Extract the value from the returned object
+  const key = Object.keys(data)[0];
+  return parseFloat(data[key]);
+};

@@ -158,8 +158,11 @@ const ShowtimesPage = () => {
                 setCurrentShowtime({
                   ShowTimeID: "",
                   CinemaID: "",
+                  CinemaName: "",
                   RoomNumber: 0,
+                  RoomType: "",
                   MovieID: "",
+                  MovieTitle: "",
                   StartTime: new Date().toISOString(),
                   EndTime: "",
                   Duration: 120,
